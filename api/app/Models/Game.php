@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Game extends Model
 {
+
+    protected $fillable = [
+        "type"
+    ];
+
     public function winner()
     {
         return $this->belongsTo(User::class, "winner_user_id");
