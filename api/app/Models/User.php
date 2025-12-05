@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserEnum;
 use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -48,7 +49,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'type' => UserType::class,  // enum casting
+        'type' => UserEnum::class,  // enum casting
         'blocked' => 'boolean',
         'coins_balance' => 'integer',
         'custom' => 'array',  // JSON field

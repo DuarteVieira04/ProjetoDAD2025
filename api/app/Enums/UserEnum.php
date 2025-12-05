@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum UserType: string
+enum UserEnum: string
 {
     case ADMIN = 'A';
     case PLAYER = 'P';
