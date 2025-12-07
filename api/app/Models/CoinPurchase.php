@@ -38,8 +38,10 @@ class CoinPurchase extends Model
         return $this->belongsTo(CoinTransactions::class, 'coin_transaction_id', 'id');
     }
 
+    /*
     public function match()
     {
         return $this->belongsTo(Matches::class, 'match_id', 'id');
     }
+    */
 }

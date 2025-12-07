@@ -12,6 +12,7 @@ class Game extends Model
 
     protected $fillable = [
         'type',
+        'match_id', // Added
         'player1_user_id',
         'player2_user_id',
         'is_draw',
@@ -20,6 +21,7 @@ class Game extends Model
         'status',
         'began_at',
         'ended_at',
+        'total_time', // Added
         'player1_points',
         'player2_points',
         'custom',
@@ -48,5 +50,26 @@ class Game extends Model
     public function winner()
     {
         return $this->belongsTo(User::class, 'winner_user_id');
+    }
+
+    // New Relationships
+    public function loser()
+    {
+        return $this->belongsTo(User::class, 'loser_user_id');
+    }
+
+    public function player1()
+    {
+        return $this->belongsTo(User::class, 'player1_user_id');
+    }
+
+    public function player2()
+    {
+        return $this->belongsTo(User::class, 'player2_user_id');
+    }
+
+    public function match()
+    {
+        return $this->belongsTo(Matches::class, 'match_id');
     }
 }
