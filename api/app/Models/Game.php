@@ -2,17 +2,14 @@
 
 namespace App\Models;
 
-use App\Enums\GameType;
+use App\Enums\GameEnum;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Game extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
         'type',
-        'match_id', // Added
+        'match_id',  // Added
         'player1_user_id',
         'player2_user_id',
         'is_draw',
@@ -21,7 +18,7 @@ class Game extends Model
         'status',
         'began_at',
         'ended_at',
-        'total_time', // Added
+        'total_time',  // Added
         'player1_points',
         'player2_points',
         'custom',
