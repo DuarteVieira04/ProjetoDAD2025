@@ -1,0 +1,20 @@
+meta {
+  name: Get User details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{api_url}}/admin/user/2
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

@@ -1,5 +1,5 @@
 {
-  "name": "IPLeiria-DAD-Project",
+  "name": "Projeto-DAD25",
   "version": "1",
   "items": [
     {
@@ -726,12 +726,9 @@
   },
   "brunoConfig": {
     "version": "1",
-    "name": "IPLeiria-DAD-Project",
+    "name": "Projeto-DAD25",
     "type": "collection",
-    "ignore": [
-      "node_modules",
-      ".git"
-    ],
+    "ignore": ["node_modules", ".git"],
     "size": 0.0014476776123046875,
     "filesCount": 9
   }
