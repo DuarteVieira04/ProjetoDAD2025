@@ -1,0 +1,26 @@
+meta {
+  name: Create User
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{api_url}}/auth/register
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "John Doe",
+    "nickname": "johnd",
+    "email": "john@example.com",
+    "password": "123456"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

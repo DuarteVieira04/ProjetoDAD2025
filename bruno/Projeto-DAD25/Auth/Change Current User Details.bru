@@ -1,0 +1,23 @@
+meta {
+  name: Change Current User Details
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{api_url}}/users/me
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "nickname": "jd"
+  }
+  
+}

@@ -1,0 +1,735 @@
+{
+  "name": "Projeto-DAD25",
+  "version": "1",
+  "items": [
+    {
+      "type": "ws",
+      "name": "TEST",
+      "filename": "TEST.bru",
+      "seq": 4,
+      "settings": {},
+      "tags": [],
+      "examples": [],
+      "request": {
+        "url": "ws-dad-group-7-172.22.21.253.sslip.io",
+        "method": "",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "ws",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": [],
+          "ws": [
+            {
+              "name": "message 1",
+              "type": "json",
+              "content": "{}"
+            }
+          ]
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "inherit"
+        }
+      }
+    },
+    {
+      "type": "http",
+      "name": "TESTING2",
+      "filename": "TESTING2.bru",
+      "seq": 5,
+      "settings": {
+        "encodeUrl": true,
+        "timeout": 0
+      },
+      "tags": [],
+      "examples": [],
+      "request": {
+        "url": "http://api-dad-group-7-172.22.21.253.sslip.io/api",
+        "method": "POST",
+        "headers": [],
+        "params": [],
+        "body": {
+          "mode": "none",
+          "formUrlEncoded": [],
+          "multipartForm": [],
+          "file": []
+        },
+        "script": {},
+        "vars": {},
+        "assertions": [],
+        "tests": "",
+        "docs": "",
+        "auth": {
+          "mode": "inherit"
+        }
+      }
+    },
+    {
+      "type": "folder",
+      "name": "Auth",
+      "filename": "Auth",
+      "examples": [],
+      "items": [
+        {
+          "type": "http",
+          "name": "Get Auth User",
+          "filename": "Get Auth User.bru",
+          "seq": 2,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/users/me",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Login",
+          "filename": "Login.bru",
+          "seq": 1,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/auth/login",
+            "method": "POST",
+            "headers": [],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"email\":\"john@example.com\",\n  \"password\":\"123456\"\n}",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "let data = res.getBody();\nbru.setEnvVar(\"token\",data.token);",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Create User",
+          "filename": "Create User.bru",
+          "seq": 3,
+          "settings": {
+            "encodeUrl": true,
+            "timeout": 0
+          },
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/auth/register",
+            "method": "POST",
+            "headers": [],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"John Doe\",\n  \"nickname\": \"johnd\",\n  \"email\": \"john@example.com\",\n  \"password\": \"123456\"\n}\n",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "inherit"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Change Current User Password",
+          "filename": "Change Current User Password.bru",
+          "seq": 4,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/users/me/password",
+            "method": "PUT",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"current_password\": \"123456\",\n  \"new_password\": \"1234567890\"\n}",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Change Current User Details",
+          "filename": "Change Current User Details.bru",
+          "seq": 5,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/users/me",
+            "method": "PUT",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"nickname\": \"jd\"\n}\n",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Games",
+      "filename": "Games",
+      "examples": [],
+      "items": [
+        {
+          "type": "http",
+          "name": "Get Games - Filtered",
+          "filename": "Get Games - Filtered.bru",
+          "seq": 2,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/games?type=S&page=1",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [
+              {
+                "name": "type",
+                "value": "S",
+                "type": "query",
+                "enabled": true
+              },
+              {
+                "name": "page",
+                "value": "1",
+                "type": "query",
+                "enabled": true
+              }
+            ],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Games",
+          "filename": "Get Games.bru",
+          "seq": 1,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/games",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Transactions",
+      "filename": "Transactions",
+      "examples": [],
+      "items": [
+        {
+          "type": "http",
+          "name": "Get Transactions",
+          "filename": "Get Transactions.bru",
+          "seq": 1,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/transactions",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Admins",
+      "filename": "Admins",
+      "seq": 6,
+      "examples": [],
+      "root": {
+        "request": {
+          "auth": {
+            "mode": "inherit"
+          }
+        },
+        "meta": {
+          "name": "Admins",
+          "seq": 6
+        }
+      },
+      "items": [
+        {
+          "type": "http",
+          "name": "Get All users",
+          "filename": "Get All users.bru",
+          "seq": 1,
+          "settings": {
+            "encodeUrl": true,
+            "timeout": 0
+          },
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/admin/users",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get User details",
+          "filename": "Get User details.bru",
+          "seq": 2,
+          "settings": {
+            "encodeUrl": true,
+            "timeout": 0
+          },
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/admin/user/2",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Coins",
+      "filename": "Coins",
+      "seq": 7,
+      "examples": [],
+      "root": {
+        "request": {
+          "auth": {
+            "mode": "inherit"
+          }
+        },
+        "meta": {
+          "name": "Coins",
+          "seq": 7
+        }
+      },
+      "items": [
+        {
+          "type": "http",
+          "name": "Get User Balance",
+          "filename": "Get User Balance.bru",
+          "seq": 6,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/coins/balance",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get User Transactions",
+          "filename": "Get User Transactions.bru",
+          "seq": 2,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/coins/balance",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "none",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "[ADMIN DECIDE] - Check transactions for a user",
+          "filename": "[ADMIN DECIDE] - Check transactions for a user.bru",
+          "seq": 3,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/coins/test",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"id\": 55\n}",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "[ADMIN DECIDE] - Check balance for a user",
+          "filename": "[ADMIN DECIDE] - Check balance for a user.bru",
+          "seq": 4,
+          "settings": {},
+          "tags": [],
+          "examples": [],
+          "request": {
+            "url": "{{api_url}}/coins/test",
+            "method": "GET",
+            "headers": [
+              {
+                "name": "Accept",
+                "value": "application/json",
+                "enabled": true
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer {{token}}",
+                "enabled": true
+              }
+            ],
+            "params": [],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"id\": 55\n}",
+              "formUrlEncoded": [],
+              "multipartForm": [],
+              "file": []
+            },
+            "script": {},
+            "vars": {},
+            "assertions": [],
+            "tests": "",
+            "docs": "",
+            "auth": {
+              "mode": "none"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "activeEnvironmentUid": "BU6eJLt8av3qxKckctU9p",
+  "environments": [
+    {
+      "variables": [
+        {
+          "name": "api_url",
+          "value": "http://api-dad-group-7.172.22.21.253.sslip.io",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        }
+      ],
+      "name": "K8s"
+    },
+    {
+      "variables": [
+        {
+          "name": "base_url",
+          "value": "http://localhost:8085",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "api_url",
+          "value": "http://localhost:8000/api",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        },
+        {
+          "name": "token",
+          "value": "",
+          "enabled": true,
+          "secret": false,
+          "type": "text"
+        }
+      ],
+      "name": "Local Development"
+    }
+  ],
+  "root": {
+    "request": {
+      "auth": {
+        "mode": "basic"
+      }
+    }
+  },
+  "brunoConfig": {
+    "version": "1",
+    "name": "Projeto-DAD25",
+    "type": "collection",
+    "ignore": ["node_modules", ".git"],
+    "size": 0.0014476776123046875,
+    "filesCount": 9
+  }
+}

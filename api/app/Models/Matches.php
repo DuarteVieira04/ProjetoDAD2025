@@ -3,57 +3,46 @@
 namespace App\Models;
 
 use App\Enums\GameEnum;
+use App\Enums\MatchEnum;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Game extends Model
+class Matches extends Model
 {
+    use SoftDeletes;
+
+    protected $table = 'matches';
+
     protected $fillable = [
         'type',
-        'match_id',  // Added
         'player1_user_id',
         'player2_user_id',
-        'is_draw',
         'winner_user_id',
         'loser_user_id',
-        'status',
+        'status',  // enum (gotta figure this)
+        'stake',
         'began_at',
         'ended_at',
-        'total_time',  // Added
+        'total_time',
+        'player1_marks',
+        'player2_marks',
         'player1_points',
         'player2_points',
-        'custom',
+        'custom'
     ];
 
-    /**
-     * Attribute casts.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'type' => GameEnum::class,
-        'is_draw' => 'boolean',
+        'status' => MatchEnum::class,
         'began_at' => 'datetime',
         'ended_at' => 'datetime',
+        'total_time' => 'decimal:2',
+        'player1_marks' => 'integer',
+        'player2_marks' => 'integer',
         'player1_points' => 'integer',
         'player2_points' => 'integer',
-        'custom' => 'array',  // JSON field
+        'custom' => 'array',
     ];
-
-    public function coinTransactions()
-    {
-        return $this->hasMany(CoinTransactions::class, 'game_id', 'id');
-    }
-
-    public function winner()
-    {
-        return $this->belongsTo(User::class, 'winner_user_id');
-    }
-
-    // New Relationships
-    public function loser()
-    {
-        return $this->belongsTo(User::class, 'loser_user_id');
-    }
 
     public function player1()
     {
@@ -65,8 +54,18 @@ class Game extends Model
         return $this->belongsTo(User::class, 'player2_user_id');
     }
 
-    public function match()
+    public function winner()
     {
-        return $this->belongsTo(Matches::class, 'match_id');
+        return $this->belongsTo(User::class, 'winner_user_id');
+    }
+
+    public function loser()
+    {
+        return $this->belongsTo(User::class, 'loser_user_id');
+    }
+
+    public function games()
+    {
+        return $this->hasMany(Game::class, 'match_id');
     }
 }

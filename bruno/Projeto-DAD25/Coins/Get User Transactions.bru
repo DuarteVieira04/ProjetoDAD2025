@@ -1,0 +1,16 @@
+meta {
+  name: Get User Transactions
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{api_url}}/coins/balance
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{token}}
+}

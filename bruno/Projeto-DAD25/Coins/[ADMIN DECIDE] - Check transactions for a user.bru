@@ -1,0 +1,22 @@
+meta {
+  name: [ADMIN DECIDE] - Check transactions for a user
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{api_url}}/coins/test
+  body: json
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "id": 55
+  }
+}
