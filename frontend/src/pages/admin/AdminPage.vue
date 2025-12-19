@@ -20,7 +20,7 @@
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="P">Player</SelectItem>
             <SelectItem value="A">Admin</SelectItem>
           </SelectContent>
@@ -34,7 +34,7 @@
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="0">Active</SelectItem>
             <SelectItem value="1">Blocked</SelectItem>
           </SelectContent>
@@ -139,6 +139,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from 'vue-sonner'
 const authStore = useAuthStore()
 
 const adminStore = useAdminStore()
@@ -169,34 +170,30 @@ watch(
 )
 
 const fetchUsers = async (page = 1) => {
-  const store = useAuthStore()
-  console.log(store)
   loading.value = true
 
   try {
     // Update store with current page and filters
     adminStore.userListQueryParams.page = page
     adminStore.userListQueryParams.filters.type = filters.type || ''
-    adminStore.userListQueryParams.filters.status = filters.blocked || ''
+    adminStore.userListQueryParams.filters.blocked = filters.blocked || ''
 
     const response = await adminStore.getAllUsers()
 
-    // Assuming Laravel-style pagination response
-    users.value = response.data.data
+    // Laravel-style pagination
+    users.value = response.data
     meta.current_page = response.data.current_page
     meta.last_page = response.data.last_page
     meta.total = response.data.total
     meta.per_page = response.data.per_page
-  } catch (error) {
-    console.error('Failed to fetch users:', error)
-    if (error.response?.status === 401) {
-      alert('Unauthorized – please log in again')
-      // Optionally redirect to login
-    } else if (error.response?.status === 403) {
-      alert('Forbidden – you do not have admin access')
-    }
 
-    // Clear table on error
+    // Show toast if no users
+    if (users.value.length === 0) {
+      toast.error('No users found for the selected filters')
+    }
+  } catch (error) {
+    // Optional: handle errors generically
+    toast.error('Failed to fetch users')
     users.value = []
   } finally {
     loading.value = false

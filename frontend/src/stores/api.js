@@ -5,7 +5,12 @@ import { computed, inject, ref } from 'vue'
 export const useAPIStore = defineStore('api', () => {
   const API_BASE_URL = inject('apiBaseURL')
 
-  const token = ref()
+  // Load token from localStorage on initialization
+  const token = ref(localStorage.getItem('authToken'))
+  if (token.value) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+  }
+
   const gameQueryParameters = ref({
     page: 1,
     filters: {
@@ -19,15 +24,20 @@ export const useAPIStore = defineStore('api', () => {
   const getToken = () => token.value
 
   // AUTH
+  const setToken = (newToken) => {
+    token.value = newToken
+    localStorage.setItem('authToken', newToken)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+  }
+
   const postLogin = async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
-    token.value = response.data.token
-    console.log({ 'postLogin token': token.value })
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+    setToken(response.data.token)
   }
   const postLogout = async () => {
     await axios.post(`${API_BASE_URL}/auth/logout`)
     token.value = undefined
+    localStorage.removeItem('authToken')
     delete axios.defaults.headers.common['Authorization']
   }
 

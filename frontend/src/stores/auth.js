@@ -5,7 +5,8 @@ import { useAPIStore } from './api'
 export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
 
-  const currentUser = ref(undefined)
+  const currentUser = ref(JSON.parse(localStorage.getItem('currentUser')) || undefined)
+
   const isLoggedIn = computed(() => {
     return currentUser.value !== undefined
   })
@@ -18,8 +19,7 @@ export const useAuthStore = defineStore('auth', () => {
     await apiStore.postLogin(credentials)
     const response = await apiStore.getAuthUser()
     currentUser.value = response.data
-
-    console.log('After login', currentUser.value, isAdmin.value)
+    localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
 
     return response.data
   }

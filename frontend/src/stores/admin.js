@@ -12,7 +12,7 @@ export const useAdminStore = defineStore('admin', () => {
     filters: {
       per_page: 15,
       type: '', // '' | 'P' | 'A'
-      status: '', // '' | '0' (active) | '1' (blocked) – adjust if backend uses 'blocked'
+      blocked: '', // '' | '0' (active) | '1' (blocked) – adjust if backend uses 'blocked'
       sort_by: 'id',
       sort_direction: 'desc',
     },
@@ -20,31 +20,32 @@ export const useAdminStore = defineStore('admin', () => {
 
   const getAllUsers = async () => {
     const apiStore = useAPIStore()
+    const token = localStorage.getItem('authToken')
 
-    console.log({ tokenGetter: apiStore.token })
-    const params = {
-      page: userListQueryParams.value.page,
-      per_page: userListQueryParams.value.filters.per_page,
-      // Only include filters if they have values
-      ...(userListQueryParams.value.filters.type && {
-        type: userListQueryParams.value.filters.type,
-      }),
-      ...(userListQueryParams.value.filters.status && {
-        status: userListQueryParams.value.filters.status,
-      }),
-      sort_by: userListQueryParams.value.filters.sort_by,
-      sort_direction: userListQueryParams.value.filters.sort_direction,
+    const filters = { ...userListQueryParams.value.filters, page: userListQueryParams.value.page }
+
+    // Only include filters with actual values (skip '' or 'all')
+    const params = Object.fromEntries(
+      Object.entries(filters).filter(([key, value]) => value !== '' && value !== 'all'),
+    )
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/admin/users`, {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.data.data.length === 0) {
+        return { message: 'No users found', users: [] }
+      }
+
+      return response.data
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      throw error
     }
-
-    // Debug log to check token
-    console.log('[AdminStore] Token before request:', apiStore.token?.value)
-
-    return axios.get(`${API_BASE_URL}/admin/users`, {
-      params,
-      headers: {
-        Authorization: `Bearer ${apiStore.getToken()}`,
-      },
-    })
   }
 
   return {

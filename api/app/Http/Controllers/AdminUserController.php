@@ -21,8 +21,14 @@ class AdminUserController extends Controller
             $query->where('type', $request->query('type'));
         }
 
-        if ($request->filled('blocked')) {
-            $query->where('blocked', (bool) $request->query('blocked'));
+        if ($request->has('blocked')) {
+            $blocked = $request->query('blocked');
+
+            if ($blocked === '1') {
+                $query->where('blocked', true);
+            } elseif ($blocked === '0') {
+                $query->where('blocked', false);
+            }
         }
 
         if ($request->filled('search')) {
