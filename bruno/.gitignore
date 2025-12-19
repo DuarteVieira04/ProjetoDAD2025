@@ -1,0 +1,23 @@
+# Ignore the entire Projeto-DAD25 folder
+Projeto-DAD25/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Node / Python / common dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment / config files
+.env
+*.env
+*.local
+bruno.json
+collection.bru
+environments/
+
+# Logs
+*.log

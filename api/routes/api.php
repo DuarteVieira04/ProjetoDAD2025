@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoinsController;
 use App\Http\Controllers\GameController;
 use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,12 +30,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::put('/users/me/password', [AuthController::class, 'changePassword']);
 
-    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     // * Coins *//
 
     Route::get('/coins/balance', [CoinsController::class, 'getCurrentUserCoins']);
     Route::get('/coins/transaction', [CoinsController::class, 'getAuthUserCoinsTransactions']);
+    Route::post('/coins/purchase', [CoinsController::class])->middleware([EnsureUser::class]);
+
+    // * Admin Coin Endpoints *//
+    // Gotta look further into these
     Route::get('/coins/test', [CoinsController::class, 'getUserCoinsTransactions']);
     Route::get('/coins/balance/{userId}', [CoinsController::class, 'getUserCoins']);
 });

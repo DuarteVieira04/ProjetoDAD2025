@@ -1,0 +1,1188 @@
+openapi: 3.0.0
+info:
+  title: Bisca Game Platform RESTful API
+  description: |
+    This API provides endpoints for managing users, coins, transactions, games, matches, leaderboards, and administrative functions in the Bisca Game Platform.
+    The platform supports user registration, authentication, gameplay setup (with real-time aspects handled via WebSockets), history tracking, and administration.
+    All endpoints follow RESTful principles. Authentication is required for most endpoints, using JWT bearer tokens.
+    The API integrates with an external Payment Gateway for coin purchases.
+
+    Key Features:
+    - User management (registration, profiles, authentication)
+    - Coin balance and transaction handling (including purchases via external gateway)
+    - Game and match creation/setup (real-time play via WebSockets)
+    - History and leaderboards
+    - Administrative controls
+    - Statistics
+
+    Database Schema Reference:
+    - Users: name, email, password (hashed), type ('A' admin, 'P' player), nickname, blocked, photo_avatar_filename, coins_balance, deleted_at, custom (JSON)
+    - Games: type ('3' or '9'), player1_user_id, player2_user_id, is_draw, winner_user_id, loser_user_id, match_id, status, began_at, ended_at, total_time, player1_points, player2_points, custom (JSON)
+    - Matches: type ('3' or '9'), player1_user_id, player2_user_id, winner_user_id, loser_user_id, status, stake, began_at, ended_at, total_time, player1_marks, player2_marks, player1_points, player2_points, custom (JSON)
+    - Coin Transaction Types: name, type ('C' credit, 'D' debit), deleted_at, custom (JSON)
+    - Coin Transactions: transaction_datetime, user_id, match_id, game_id, coin_transaction_type_id, coins, custom (JSON)
+    - Coin Purchases: purchase_datetime, user_id, coin_transaction_id, euros, payment_type, payment_reference, custom (JSON)
+
+    Error Handling:
+    - Standard HTTP status codes (e.g., 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 500 Internal Server Error)
+    - Responses include error messages in JSON format.
+  version: 1.0.0
+  contact:
+    name: Bisca Platform Development Team
+    email: support@bisca-platform.example.com
+servers:
+  - url: http://api-dad-group-7-172.22.21.253.sslip.io/
+    description: Production Server
+  - url: http://localhost:8000/
+    description: Development Server
+tags:
+  - name: authentication
+    description: Endpoints for user authentication and session management
+  - name: users
+    description: Endpoints for user registration, profiles, and account management
+  - name: admins
+    description: Administrative endpoints for managing users and admins
+  - name: coins
+    description: Endpoints for managing coin balances
+  - name: purchases
+    description: Endpoints for coin purchases via external gateway
+  - name: transactions
+    description: Endpoints for viewing coin transactions
+  - name: games
+    description: Endpoints for managing games, including creation, joining, and resignation
+  - name: matches
+    description: Endpoints for managing matches, including creation, joining, and resignation
+  - name: history
+    description: Endpoints for viewing game and match history
+  - name: leaderboards
+    description: Endpoints for global leaderboards
+  - name: statistics
+    description: Endpoints for platform statistics
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique user ID
+        name:
+          type: string
+          description: User's full name
+        email:
+          type: string
+          format: email
+          description: User's email (used for login)
+        type:
+          type: string
+          enum: [A, P]
+          description: \'A' for Administrator, 'P' for Player
+        nickname:
+          type: string
+          description: Unique nickname for display in games and leaderboards
+        blocked:
+          type: boolean
+          description: Whether the user is blocked
+        photo_avatar_filename:
+          type: string
+          nullable: true
+          description: Filename of the user's photo or avatar
+        coins_balance:
+          type: integer
+          description: Current coin balance (for players)
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft-delete timestamp
+        custom:
+          type: object
+          additionalProperties: true
+          description: JSON field for custom data
+      required:
+        - id
+        - name
+        - email
+        - type
+        - nickname
+        - blocked
+        - coins_balance
+    UserRegistration:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 3
+        nickname:
+          type: string
+        photo_avatar_filename:
+          type: string
+          nullable: true
+      required:
+        - name
+        - email
+        - password
+        - nickname
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 3
+        nickname:
+          type: string
+        photo_avatar_filename:
+          type: string
+          nullable: true
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: ["3", "9"]
+          description: \'3' for Bisca de 3, '9' for Bisca de 9
+        player1_user_id:
+          type: integer
+        player2_user_id:
+          type: integer
+          nullable: true
+        is_draw:
+          type: boolean
+          default: false
+        winner_user_id:
+          type: integer
+          nullable: true
+        loser_user_id:
+          type: integer
+          nullable: true
+        match_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [Pending, Playing, Ended, Interrupted]
+        began_at:
+          type: string
+          format: date-time
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        total_time:
+          type: integer
+          nullable: true
+          description: Duration in seconds
+        player1_points:
+          type: integer
+          default: 0
+        player2_points:
+          type: integer
+          default: 0
+        custom:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - type
+        - player1_user_id
+        - status
+    GameCreate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["3", "9"]
+      required:
+        - type
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: ["3", "9"]
+        player1_user_id:
+          type: integer
+        player2_user_id:
+          type: integer
+          nullable: true
+        winner_user_id:
+          type: integer
+          nullable: true
+        loser_user_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [Pending, Playing, Ended, Interrupted]
+        stake:
+          type: integer
+          minimum: 3
+          maximum: 100
+        began_at:
+          type: string
+          format: date-time
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        total_time:
+          type: integer
+          nullable: true
+        player1_marks:
+          type: integer
+          default: 0
+        player2_marks:
+          type: integer
+          default: 0
+        player1_points:
+          type: integer
+          default: 0
+        player2_points:
+          type: integer
+          default: 0
+        custom:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - type
+        - player1_user_id
+        - status
+        - stake
+    MatchCreate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["3", "9"]
+        stake:
+          type: integer
+          minimum: 3
+          maximum: 100
+      required:
+        - type
+        - stake
+    CoinTransactionType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: Bonus
+        type:
+          type: string
+          enum: [C, D]
+          description: \'C' for Credit, 'D' for Debit
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        custom:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - name
+        - type
+    CoinTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        transaction_datetime:
+          type: string
+          format: date-time
+        user_id:
+          type: integer
+        match_id:
+          type: integer
+          nullable: true
+        game_id:
+          type: integer
+          nullable: true
+        coin_transaction_type_id:
+          type: integer
+        coins:
+          type: integer
+          description: Positive for credit, negative for debit
+        custom:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - transaction_datetime
+        - user_id
+        - coin_transaction_type_id
+        - coins
+    CoinPurchase:
+      type: object
+      properties:
+        id:
+          type: integer
+        purchase_datetime:
+          type: string
+          format: date-time
+        user_id:
+          type: integer
+        coin_transaction_id:
+          type: integer
+        euros:
+          type: integer
+          minimum: 1
+          maximum: 99
+        payment_type:
+          type: string
+          enum: [MBWAY, PAYPAL, IBAN, MB, VISA]
+        payment_reference:
+          type: string
+          description: Format depends on payment_type
+        custom:
+          type: object
+          additionalProperties: true
+      required:
+        - id
+        - purchase_datetime
+        - user_id
+        - coin_transaction_id
+        - euros
+        - payment_type
+        - payment_reference
+    CoinPurchaseRequest:
+      type: object
+      properties:
+        euros:
+          type: integer
+          minimum: 1
+          maximum: 99
+          description: Amount in euros (converted to coins at 1:10 rate)
+        payment_type:
+          type: string
+          enum: [MBWAY, PAYPAL, IBAN, MB, VISA]
+        payment_reference:
+          type: string
+          description: Must match validation rules for payment_type
+      required:
+        - euros
+        - payment_type
+        - payment_reference
+    LeaderboardEntry:
+      type: object
+      properties:
+        nickname:
+          type: string
+        wins:
+          type: integer
+        capotes:
+          type: integer
+        bandeiras:
+          type: integer
+    Statistics:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        total_games:
+          type: integer
+        total_matches:
+          type: integer
+        total_purchases:
+          type: integer
+        average_game_duration:
+          type: number
+        # Additional stats can be added as needed
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+          nullable: true
+      required:
+        - message
+paths:
+  /register:
+    post:
+      tags:
+        - users
+      summary: Register a new user
+      description: Creates a new player account and credits 10 welcome coins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid input (e.g., duplicate email or nickname)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /login:
+    post:
+      tags:
+        - authentication
+      summary: User login
+      description: Authenticates a user and returns a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /logout:
+    post:
+      tags:
+        - authentication
+      summary: User logout
+      description: Invalidates the current session/token.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successfully logged out
+        "401":
+          description: Unauthorized
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: Get user profile
+      description: Retrieves the profile of the specified user. Users can only view their own; admins can view any.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden (not own profile and not admin)
+        "404":
+          description: User not found
+    put:
+      tags:
+        - users
+      summary: Update user profile
+      description: Updates the profile of the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid input
+        "403":
+          description: Forbidden (not own profile)
+    delete:
+      tags:
+        - users
+      summary: Delete user account
+      description: Soft-deletes the account after confirmation. Forfeits coins. Admins cannot delete own.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confirmation:
+                  type: string
+                  description: Confirmation phrase or password
+              required:
+                - confirmation
+      responses:
+        "204":
+          description: Account deleted
+        "403":
+          description: Forbidden (admin own account or invalid confirmation)
+        "404":
+          description: User not found
+  /users:
+    get:
+      tags:
+        - admins
+      summary: List all users
+      description: Lists all users (admins only).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [A, P]
+        - name: blocked
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden (not admin)
+  /admins:
+    post:
+      tags:
+        - admins
+      summary: Create new administrator
+      description: Creates a new admin account (admins only).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: Admin created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden (not admin)
+  /users/{id}/block:
+    put:
+      tags:
+        - admins
+      summary: Block or unblock a player
+      description: Toggles block status for a player (admins only).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                blocked:
+                  type: boolean
+              required:
+                - blocked
+      responses:
+        "200":
+          description: Block status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden (not admin or targeting admin)
+        "404":
+          description: User not found
+  /users/{id}/coins:
+    get:
+      tags:
+        - coins
+      summary: Get coin balance
+      description: Retrieves the coin balance for the user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Coin balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+        "403":
+          description: Forbidden (not own or not admin)
+  /purchases:
+    post:
+      tags:
+        - purchases
+      summary: Purchase coins
+      description: Processes a coin purchase via the external Payment Gateway. Converts euros to coins (1:10). Logs transaction.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoinPurchaseRequest"
+      responses:
+        "201":
+          description: Purchase successful, coins credited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoinPurchase"
+        "400":
+          description: Invalid payment details
+        "422":
+          description: External gateway error (e.g., insufficient funds simulation)
+        "500":
+          description: Internal error (e.g., gateway unreachable)
+  /transactions:
+    get:
+      tags:
+        - transactions
+      summary: Get transaction history
+      description: Retrieves coin transactions. Users see own; admins see all or filtered.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by user (admins only)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CoinTransaction"
+        "403":
+          description: Forbidden (accessing others without admin)
+  /games:
+    get:
+      tags:
+        - games
+      summary: List games
+      description: Lists multiplayer games (pending or all, depending on role). Admins see all; users see available/own.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Pending, Playing, Ended, Interrupted]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: ["3", "9"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+    post:
+      tags:
+        - games
+      summary: Create a new game
+      description: Creates a standalone multiplayer game. Deducts entry fee if applicable.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameCreate"
+      responses:
+        "201":
+          description: Game created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Insufficient coins or invalid type
+  /games/{id}:
+    get:
+      tags:
+        - games
+      summary: Get game details
+      description: Retrieves details of a specific game. Visible to participants or admins.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "403":
+          description: Forbidden
+        "404":
+          description: Game not found
+  /games/{id}/join:
+    post:
+      tags:
+        - games
+      summary: Join a game
+      description: Joins a pending multiplayer game. Deducts entry fee.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Joined successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Game not pending or insufficient coins
+        "404":
+          description: Game not found
+  /games/{id}/resign:
+    post:
+      tags:
+        - games
+      summary: Resign from a game
+      description: Resigns from an ongoing game, awarding remaining cards to opponent.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resigned successfully
+        "403":
+          description: Not a participant
+        "404":
+          description: Game not found
+  /users/{id}/games:
+    get:
+      tags:
+        - history
+      summary: Get user's game history
+      description: Retrieves multiplayer game history for the user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Game history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+        "403":
+          description: Forbidden (not own or not admin)
+  /matches:
+    get:
+      tags:
+        - matches
+      summary: List matches
+      description: Lists multiplayer matches (pending or all). Admins see all; users see available/own.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Pending, Playing, Ended, Interrupted]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: ["3", "9"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Match"
+    post:
+      tags:
+        - matches
+      summary: Create a new match
+      description: Creates a multiplayer match. Deducts stake.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchCreate"
+      responses:
+        "201":
+          description: Match created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+        "400":
+          description: Insufficient coins or invalid stake
+  /matches/{id}:
+    get:
+      tags:
+        - matches
+      summary: Get match details
+      description: Retrieves details of a specific match. Visible to participants or admins.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Match details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+        "403":
+          description: Forbidden
+        "404":
+          description: Match not found
+  /matches/{id}/join:
+    post:
+      tags:
+        - matches
+      summary: Join a match
+      description: Joins a pending match. Must agree to stake.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Joined successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+        "400":
+          description: Match not pending or insufficient coins
+        "404":
+          description: Match not found
+  /matches/{id}/resign:
+    post:
+      tags:
+        - matches
+      summary: Resign from a match
+      description: Resigns from the match, forfeiting all remaining games.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resigned successfully
+        "403":
+          description: Not a participant
+        "404":
+          description: Match not found
+  /users/{id}/matches:
+    get:
+      tags:
+        - history
+      summary: Get user's match history
+      description: Retrieves multiplayer match history for the user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Match history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Match"
+        "403":
+          description: Forbidden (not own or not admin)
+  /leaderboards/games:
+    get:
+      tags:
+        - leaderboards
+      summary: Get game leaderboards
+      description: Global leaderboard for game wins (visible to all, including anonymous).
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+  /leaderboards/matches:
+    get:
+      tags:
+        - leaderboards
+      summary: Get match leaderboards
+      description: Global leaderboard for match wins.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+  /statistics:
+    get:
+      tags:
+        - statistics
+      summary: Get platform statistics
+      description: Aggregated statistics. Anonymized for non-admins; full for admins.
+      security:
+        - bearerAuth: [] # Optional for anonymous views
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: last_month
+      responses:
+        "200":
+          description: Statistics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Statistics"
+        "403":
+          description: Forbidden (full access requires admin)
+security:
+  - bearerAuth: [] # Global security, overridden per endpoint if needed
