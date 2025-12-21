@@ -48,8 +48,14 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  const getUserDetails = async (userID) => {
+    const user = await axios.get(`${API_BASE_URL}/admin/user/${userID}`)
+    return user
+  }
+
   return {
     getAllUsers,
+    getUserDetails,
     userListQueryParams,
   }
 })

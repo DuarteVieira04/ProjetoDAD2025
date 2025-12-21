@@ -68,7 +68,13 @@
 
           <template v-else>
             <TableRow v-for="user in users" :key="user.id">
-              <TableCell>{{ user.id }}</TableCell>
+              <TableCell>
+                <span
+                  @click="goToProfile(user.id)"
+                  class="text-blue-500 underline cursor-pointer"
+                  >{{ user.id }}</span
+                ></TableCell
+              >
               <TableCell>{{ user.nickname }}</TableCell>
               <TableCell>{{ user.email }}</TableCell>
               <TableCell>
@@ -138,12 +144,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useAuthStore } from '@/stores/auth'
 import { toast } from 'vue-sonner'
-const authStore = useAuthStore()
+import router from '@/router'
 
 const adminStore = useAdminStore()
-
+const goToProfile = (userId) => {
+  router.push({
+    name: `profile`,
+    params: {
+      userId,
+    },
+  })
+}
 const users = ref([])
 const loading = ref(false)
 

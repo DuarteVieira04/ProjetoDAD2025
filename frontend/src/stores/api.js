@@ -38,6 +38,7 @@ export const useAPIStore = defineStore('api', () => {
     await axios.post(`${API_BASE_URL}/auth/logout`)
     token.value = undefined
     localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
     delete axios.defaults.headers.common['Authorization']
   }
 
