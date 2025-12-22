@@ -21,23 +21,13 @@
 
           <label class="block">
             Reference
-            <input
-              v-model="payment.reference"
-              type="text"
-              class="p-2 border rounded w-full"
-              placeholder="Enter payment reference"
-            />
+            <input v-model="payment.reference" type="text" class="p-2 border rounded w-full"
+              placeholder="Enter payment reference" />
           </label>
 
           <label class="block">
             Amount (€)
-            <input
-              v-model.number="payment.value"
-              type="number"
-              min="1"
-              max="99"
-              class="p-2 border rounded w-full"
-            />
+            <input v-model.number="payment.value" type="number" min="1" max="99" class="p-2 border rounded w-full" />
           </label>
 
           <Button @click="submitPurchase" :loading="loading">Buy Coins</Button>
@@ -68,9 +58,28 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
+const validateForm = () => {
+  if (!payment.value.type) {
+    error.value = 'Payment type is required.'
+    return false
+  }
+  if (!payment.value.reference) {
+    error.value = 'Reference is required.'
+    return false
+  }
+  if (!payment.value.value || payment.value.value < 1 || payment.value.value > 99) {
+    error.value = 'Amount must be between 1 and 99.'
+    return false
+  }
+  return true
+}
+
 const submitPurchase = async () => {
   error.value = ''
   success.value = ''
+
+  if (!validateForm()) return
+
   loading.value = true
 
   try {
