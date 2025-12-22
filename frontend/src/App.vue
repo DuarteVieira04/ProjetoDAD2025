@@ -7,7 +7,7 @@
         >&nbsp;&nbsp;&nbsp; ({{ authStore.currentUser?.name }})
       </span>
     </div>
-    <NavBar @logout="logout" :userLoggedIn="authStore.isLoggedIn" />
+    <NavBar @logout="logout" :userLoggedIn="authStore.isLoggedIn" :isAdmin="authStore.isAdmin" />
   </nav>
   <div>
     <main class="m-auto container">
@@ -27,6 +27,7 @@ import { useAuthStore } from './stores/auth'
 import { useSocketStore } from './stores/socket'
 
 const authStore = useAuthStore()
+
 const socketStore = useSocketStore()
 
 const year = new Date().getFullYear()

@@ -6,7 +6,7 @@
         <CardDescription>
           {{
             isViewingAnotherUserAsAdmin()
-              ? `User ${displayedUser.value.id}'s details`
+              ? `User ${displayedUser?.value?.id}'s details`
               : 'Your account details'
           }}
         </CardDescription>
@@ -54,6 +54,19 @@
           <div v-if="!isViewingAnotherUserAsAdmin()">
             <Button @click="logout" variant="destructive"> Logout </Button>
           </div>
+
+          <div v-if="isViewingAnotherUserAsAdmin()">
+            <hr />
+            <div class="p-4">
+              <span>Admin Actions:</span>
+              <div class="mt-2" v-if="displayedUser?.blocked == false">
+                <Button @click="toggleBlockUser(true)" variant="destructive">Block user</Button>
+              </div>
+              <div class="mt-2" v-else>
+                <Button @click="toggleBlockUser(false)">Unblock user</Button>
+              </div>
+            </div>
+          </div>
         </div>
       </CardContent>
 
@@ -88,10 +101,14 @@ const isViewingAnotherUserAsAdmin = () => {
     displayedUser.value?.id !== authStore.currentUserID
   )
 }
-const emits = defineEmits(['logout'])
 
 const logout = () => {
   authStore.logout()
+}
+
+const toggleBlockUser = async (shouldBlock) => {
+  await adminStore.setUserBlocked(displayedUser.value.id, shouldBlock)
+  displayedUser.value.blocked = shouldBlock // "automatically" display the opposite action button (block -> unblock) and vice versa
 }
 
 const formatDate = (dateString) => {
@@ -109,6 +126,7 @@ const fetchUser = async () => {
     // fallback to current user
     displayedUser.value = authStore.currentUser
   }
+  console.log(displayedUser.value)
 }
 
 onMounted(fetchUser)

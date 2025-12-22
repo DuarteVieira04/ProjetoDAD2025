@@ -62,4 +62,40 @@ class AdminUserController extends Controller
 
         return response()->json($user);
     }
+
+    public function blockUser(Request $request, $id)
+    {
+        $request->validate([
+            'blocked' => ['required', 'boolean'],
+        ]);
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'User not found',
+                'id' => $id,
+            ], 404);
+        }
+
+        // Optional: prevent blocking admins
+        if ($user->is_admin) {
+            return response()->json([
+                'error' => 'Cannot block an admin user',
+            ], 403);
+        }
+
+        // 409 — no state change
+        if ($user->blocked === $request->blocked) {
+            return response()->json([
+                'error' => 'User block status already set',
+                'blocked' => $user->blocked,
+            ], 409);
+        }
+
+        $user->blocked = $request->blocked;
+        $user->save();
+
+        return response()->json($user, 200);
+    }
 }

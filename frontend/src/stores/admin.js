@@ -19,14 +19,13 @@ export const useAdminStore = defineStore('admin', () => {
   })
 
   const getAllUsers = async () => {
-    const apiStore = useAPIStore()
     const token = localStorage.getItem('authToken')
 
     const filters = { ...userListQueryParams.value.filters, page: userListQueryParams.value.page }
 
     // Only include filters with actual values (skip '' or 'all')
     const params = Object.fromEntries(
-      Object.entries(filters).filter(([key, value]) => value !== '' && value !== 'all'),
+      Object.entries(filters).filter(([, value]) => value !== '' && value !== 'all'),
     )
 
     try {
@@ -53,9 +52,21 @@ export const useAdminStore = defineStore('admin', () => {
     return user
   }
 
+  const setUserBlocked = async (userId, blocked) => {
+    return axios.put(`${API_BASE_URL}/admin/user/${userId}`, {
+      blocked,
+    })
+  }
+
+  const getStats = async () => {
+    return axios.get(`${API_BASE_URL}/statistics`)
+  }
+
   return {
     getAllUsers,
     getUserDetails,
+    setUserBlocked,
+    getStats,
     userListQueryParams,
   }
 })

@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoinsController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureUser;
 use Illuminate\Http\Request;
@@ -16,6 +17,10 @@ Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
     // ! Admin Routes
     Route::get('/admin/users', [AdminUserController::class, 'getUsers']);
     Route::get('/admin/user/{userId}', [AdminUserController::class, 'getUserDetails']);
+    Route::put('/admin/user/{userId}', [AdminUserController::class, 'blockUser']);
+
+    // ! Statistics Route
+    Route::get('/statistics', [StatisticsController::class, 'getStatistics']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
