@@ -43,4 +43,28 @@ class BiscaGameLogic
             BiscaRank::TWO => 1,
         };
     }
+
+    /**
+     * Calculates the marks awarded to the winner based on points.
+     * Rules:
+     * - 61-90 points: 1 mark (standard win)
+     * - 91-119 points: 2 marks (Capote)
+     * - 120 points: Match Win (Bandeira) -> Effectively enough marks to win the match (4).
+     *
+     * @param int $winnerPoints
+     * @return int Number of marks (0 if not a win, though input implies winner).
+     */
+    public static function calculateMarks(int $winnerPoints): int
+    {
+        if ($winnerPoints == 120) {
+            return 4; // Bandeira - Wins match immediately (targets 4 marks)
+        }
+        if ($winnerPoints >= 91) {
+            return 2; // Capote
+        }
+        if ($winnerPoints >= 61) {
+            return 1; // Basic win
+        }
+        return 0; // Draw or loss? Should not happen if confirmed winner.
+    }
 }
