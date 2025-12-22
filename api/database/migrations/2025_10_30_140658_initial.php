@@ -174,7 +174,7 @@ return new class extends Migration
 
         Schema::create('coin_transactions', function (Blueprint $table) {
             $table->id();
-
+            
             // Datetime of the coin transaction
             $table->dateTime('transaction_datetime');
 
