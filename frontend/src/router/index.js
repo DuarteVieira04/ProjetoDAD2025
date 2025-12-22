@@ -9,6 +9,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { toast } from 'vue-sonner'
 import ShopPage from '@/pages/shop/ShopPage.vue'
 import GameView from '@/pages/game/GameView.vue'
+import LobbyPage from '@/pages/lobby/LobbyPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,8 +19,14 @@ const router = createRouter({
       component: HomePage,
     },
     {
-      path: '/game',
+      path: '/game/:id',
+      name: 'game',
       component: GameView,
+      props: true,
+    },
+    {
+      path: '/lobby',
+      component: LobbyPage,
     },
     {
       path: '/login',

@@ -26,6 +26,16 @@ function shuffle(array) {
 
 const games = new Map();
 
+export function getOpenGames() {
+  const openGames = [];
+  for (const game of games.values()) {
+    console.log(game);
+    if (game.status === "waiting") openGames.push(game);
+  }
+  console.log({ openGamesLenght: openGames.length });
+  return openGames;
+}
+
 export function createGame({ id, variant = "9", creator }) {
   const fullDeck = shuffle(generateDeck());
   const size = HAND_SIZE[variant];
@@ -39,7 +49,11 @@ export function createGame({ id, variant = "9", creator }) {
   const game = {
     id,
     variant,
-    players: { player1: creator, player2: null },
+    creator,
+    players: {
+      player1: { ...creator, disconnected: false },
+      player2: null,
+    },
     hands: { player1: hand1, player2: hand2 },
     stock,
     trumpCard,
@@ -61,4 +75,8 @@ export function getGame(id) {
 
 export function deleteGame(id) {
   games.delete(id);
+}
+
+export function getAllGames() {
+  return [...games.values()];
 }
