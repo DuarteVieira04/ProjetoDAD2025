@@ -50,3 +50,28 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::apiResource('games', GameController::class);
+
+// Temporary Test Route for Game Logic
+Route::get('/test-game-logic', function () {
+    $game = new \App\Game\BiscaGameState(9); // Bisca de 9
+    $game->start();
+
+    // Simulate a trick
+    $card1 = $game->player1Hand->pop();
+    $card2 = $game->player2Hand->pop();
+
+    $winner = \App\Game\BiscaGameLogic::calculateTrickWinner($card1, $card2, $game->trumpCard->suit);
+
+    return response()->json([
+        'trump' => $game->trumpCard->toString(),
+        'player1_card' => $card1->toString(),
+        'player2_card' => $card2->toString(),
+        'trick_winner' => 'Player ' . $winner,
+        'deck_remaining' => $game->deck->count(),
+        'p1_hand_count' => $game->player1Hand->count(),
+        'points_card1' => $card1->getPoints(),
+        'points_card2' => $card2->getPoints(),
+        'marks_test_capote' => \App\Game\BiscaGameLogic::calculateMarks(100), // Should be 2
+        'marks_test_bandeira' => \App\Game\BiscaGameLogic::calculateMarks(120), // Should be 4
+    ]);
+});
