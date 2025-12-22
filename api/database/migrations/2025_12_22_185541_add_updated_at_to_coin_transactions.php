@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('coins_transaction', function (Blueprint $table) {
+        Schema::table('coin_transactions', function (Blueprint $table) {
             $table->timestamps();
         });
     }
@@ -20,7 +20,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('coins_transaction', function (Blueprint $table) {
+        Schema::table('coin_transactions', function (Blueprint $table) {
             $table->dropTimestamps();
         });
     }
