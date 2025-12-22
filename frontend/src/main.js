@@ -13,7 +13,12 @@ const wsConnection = import.meta.env.VITE_WS_CONNECTION
 
 const app = createApp(App)
 
-app.provide('socket', io(wsConnection))
+app.provide(
+  'socket',
+  io(wsConnection, {
+    reconnectionAttempts: 10,
+  }),
+)
 app.provide('serverBaseURL', `http://${apiDomain}`)
 app.provide('apiBaseURL', `http://${apiDomain}/api`)
 

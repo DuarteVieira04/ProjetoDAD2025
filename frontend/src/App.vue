@@ -1,21 +1,35 @@
 <template>
   <Toaster richColors />
-  <nav class="flex flex-row justify-between p-5 max-w-full align-middle">
-    <div class="text-xl align-middle">
-      <RouterLink to="/"> {{ pageTitle }} </RouterLink>
-      <span class="text-xs" v-if="authStore.currentUser"
-        >&nbsp;&nbsp;&nbsp; ({{ authStore.currentUser?.name }})
-      </span>
-    </div>
-    <NavBar @logout="logout" :userLoggedIn="authStore.isLoggedIn" :isAdmin="authStore.isAdmin" />
-  </nav>
-  <div>
-    <main class="m-auto container">
-      <RouterView />
-    </main>
-  </div>
-</template>
 
+  <!-- Full-Width Header -->
+  <header
+    class="bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b"
+  >
+    <div class="flex flex-row items-center px-4 md:px-8 w-full h-16">
+      <!-- Left: Logo / Page Title + User Name -->
+      <div class="flex items-center gap-2 font-semibold text-xl">
+        <RouterLink to="/" class="flex items-center gap-2 hover:opacity-80 transition">
+          {{ pageTitle }}
+        </RouterLink>
+        <p v-if="authStore.currentUser" class="font-normal text-muted-foreground text-sm">
+          ({{ authStore.currentUser?.name }})
+        </p>
+      </div>
+      <div class="flex flex-1 justify-end text-end">
+        <NavBar
+          @logout="logout"
+          :userLoggedIn="authStore.isLoggedIn"
+          :isAdmin="authStore.isAdmin()"
+        />
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content: Still uses container for better readability on large screens -->
+  <main class="mx-auto px-4 py-8 max-w-7xl container">
+    <RouterView />
+  </main>
+</template>
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import { toast } from 'vue-sonner'

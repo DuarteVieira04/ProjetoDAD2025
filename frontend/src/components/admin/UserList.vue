@@ -121,7 +121,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, toRefs } from 'vue'
+import { reactive } from 'vue'
 import {
   Table,
   TableBody,
