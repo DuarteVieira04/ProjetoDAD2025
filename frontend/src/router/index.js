@@ -7,6 +7,7 @@ import ProfilePage from '@/pages/profile/ProfilePage.vue'
 import { useAuthStore } from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
 import { toast } from 'vue-sonner'
+import ShopPage from '@/pages/shop/ShopPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,6 +35,11 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
       },
+    },
+    {
+      path: '/shop',
+      name: 'shop',
+      component: ShopPage,
     },
     {
       path: '/testing',
