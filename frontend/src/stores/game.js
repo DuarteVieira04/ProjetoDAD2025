@@ -11,6 +11,8 @@ export const useGameStore = defineStore('game', () => {
     socket.emit(event, data, callback)
   }
 
+  let timerInterval = null
+
   // Helper to prevent duplicate listeners if store is re-setup (though stores are singletons usually)
   const on = (event, handler) => {
     socket.off(event) // Clear previous to be safe
@@ -31,11 +33,16 @@ export const useGameStore = defineStore('game', () => {
   const opponentNickname = ref('Waiting...')
   const gameId = ref(null)
   const youAre = ref(null)
+  const status = ref('waiting')
 
   // Actions
   const playCard = (card) => {
     if (!isMyTurn.value || !gameId.value) return
-    emit('playCard', { gameId: gameId.value, card: { suit: card.suit, rank: card.rank } })
+    emit('playCard', { gameId: gameId.value, card: { suit: card.suit, rank: card.rank } }, (res) => {
+      if (res && res.error) {
+        alert(res.error)
+      }
+    })
   }
 
   const createGame = (variant = '9') => {
@@ -67,10 +74,13 @@ export const useGameStore = defineStore('game', () => {
 
   const resign = () => {
     if (!gameId.value) return
-    emit('resign', { gameId: gameId.value })
+    emit('resign', { gameId: gameId.value }, (res) => {
+      if (res && res.error) alert(res.error)
+    })
   }
 
   const reset = () => {
+    if (timerInterval) clearInterval(timerInterval)
     myHand.value = []
     opponentHandCount.value = 0
     stockCount.value = 0
@@ -84,6 +94,7 @@ export const useGameStore = defineStore('game', () => {
     opponentNickname.value = 'Waiting...'
     gameId.value = null
     youAre.value = null
+    status.value = 'waiting'
   }
 
   // Setup all listeners once
@@ -99,21 +110,45 @@ export const useGameStore = defineStore('game', () => {
     trumpSuit.value = data.trumpSuit
     youAre.value = data.youAre
     opponentNickname.value = 'Opponent'
+    status.value = 'playing'
   })
 
   on('opponentJoined', ({ nickname }) => {
     console.log('[GameStore] Opponent joined:', nickname)
     opponentNickname.value = nickname
+    status.value = 'playing'
   })
 
   on('turnStarted', ({ player, seconds }) => {
     isMyTurn.value = player === youAre.value
     timerSeconds.value = seconds
+
+    // Clear existing timer if any
+    if (timerInterval) clearInterval(timerInterval)
+
+    // Start countdown
+    timerInterval = setInterval(() => {
+      if (timerSeconds.value > 0) {
+        timerSeconds.value--
+      } else {
+        clearInterval(timerInterval)
+      }
+    }, 1000)
   })
 
   on('cardPlayed', ({ player, card }) => {
     const key = player === 'player1' ? 'player1' : 'player2'
     playedCards.value[key] = { ...card, isWinner: false }
+
+    // If it was ME who played, remove from myHand
+    if (player === youAre.value) {
+      const idx = myHand.value.findIndex(
+        (c) => c.suit === card.suit && c.rank === card.rank
+      )
+      if (idx !== -1) {
+        myHand.value.splice(idx, 1)
+      }
+    }
   })
 
   on('cardDrawn', (card) => {
@@ -134,10 +169,18 @@ export const useGameStore = defineStore('game', () => {
     }
   })
 
+  on('roundEnded', () => {
+    playedCards.value = { player1: null, player2: null }
+  })
+
+  const gameOverData = ref(null)
+
   on('gameEnded', ({ winner, points, reason }) => {
-    alert(
-      `Game Over! ${winner === youAre.value ? 'You win!' : opponentNickname.value + ' wins'} (${reason}), points: ${points}`,
-    )
+    if (timerInterval) clearInterval(timerInterval)
+    status.value = 'ended'
+    gameOverData.value = { winner, points, reason }
+    // No alert, UI should handle this
+    console.log('Game Ended', { winner, points, reason })
   })
 
   on('invalidMove', ({ reason }) => {
@@ -157,6 +200,8 @@ export const useGameStore = defineStore('game', () => {
     opponentNickname,
     gameId,
     youAre,
+    status,
+    gameOverData,
     reset,
     playCard,
     createGame,
