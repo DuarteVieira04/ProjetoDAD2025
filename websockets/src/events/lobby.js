@@ -6,6 +6,7 @@ export function emitOpenGames(io) {
     creator: g.creator,
     variant: g.variant,
   }));
+  console.log(`[Lobby] Emitting ${games.length} open games to 'lobby' room.`);
   io.to("lobby").emit("openGamesUpdated", games);
 }
 

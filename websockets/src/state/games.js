@@ -32,7 +32,7 @@ export function getOpenGames() {
     console.log(game);
     if (game.status === "waiting") openGames.push(game);
   }
-  console.log({ openGamesLenght: openGames.length });
+  console.log({ openGamesLength: openGames.length });
   return openGames;
 }
 

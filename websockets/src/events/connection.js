@@ -4,8 +4,12 @@ import { handleDisconnect, handleReconnect } from "./reconnection.js";
 
 export function handleConnectionEvents(io, socket) {
   const user = socket.handshake.auth;
+  console.log(`[Connection] User connected: ${user?.nickname || 'Anonymous'} (${socket.id})`);
 
-  socket.on("joinLobby", () => joinLobby(io, socket));
+  socket.on("joinLobby", () => {
+    console.log(`[Lobby] Socket ${socket.id} joining lobby.`);
+    joinLobby(io, socket);
+  });
   socket.on("createGame", ({ variant }, callback) =>
     createGameHandler(io, socket, user, variant, callback)
   );

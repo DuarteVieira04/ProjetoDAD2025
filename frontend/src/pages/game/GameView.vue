@@ -205,8 +205,11 @@ onMounted(() => {
   }
 
   // Reset store for a new game session
+  // game.reset() // <-- Actually, maybe we shouldn't reset if we are re-entering? 
+  // Ideally, reset before joining.
   game.reset()
 
+  // Only emit joinGame if user is not the creator
   // Only emit joinGame if user is not the creator
   if (game.youAre !== 'player1') {
     game.joinGame(gameId).catch((err) => {
@@ -214,32 +217,11 @@ onMounted(() => {
       // Optionally redirect to lobby
     })
   }
-
-  // Listen for server events
-  socket.on('gameStarted', (data) => {
-    game.youAre = data.youAre
-    game.myHand = data.yourHand || []
-    game.opponentHandCount = data.opponentHandSize || 0
-    game.stockCount = data.stockSize || 0
-    game.trumpCard = { filename: data.trumpCardFilename }
-    game.trumpSuit = data.trumpSuit
-    game.isMyTurn = data.firstTurn === game.youAre
-    game.opponentNickname = 'Opponent'
-  })
-
-  socket.on('opponentJoined', ({ nickname }) => {
-    game.opponentNickname = nickname
-  })
-
-  socket.on('turnStarted', ({ player, seconds }) => {
-    game.isMyTurn = player === game.youAre
-    game.timerSeconds = seconds
-  })
 })
-
+// No onBeforeUnmount needed for listeners anymore since Store handles them permanently.
+/*
 onBeforeUnmount(() => {
-  socket.off('gameStarted')
-  socket.off('opponentJoined')
-  socket.off('turnStarted')
 })
+*/
 </script>
+```

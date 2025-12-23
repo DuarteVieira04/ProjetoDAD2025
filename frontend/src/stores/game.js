@@ -1,10 +1,21 @@
 // src/stores/useGameStore.js
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { defineStore } from 'pinia'
-import { useSocket } from '@/composables/useSocket.js'
+
 
 export const useGameStore = defineStore('game', () => {
-  const { emit, on } = useSocket()
+  // Direct injection to avoid lifecycle cleanup issues from useSocket composable
+  const socket = inject('socket')
+
+  const emit = (event, data, callback) => {
+    socket.emit(event, data, callback)
+  }
+
+  // Helper to prevent duplicate listeners if store is re-setup (though stores are singletons usually)
+  const on = (event, handler) => {
+    socket.off(event) // Clear previous to be safe
+    socket.on(event, handler)
+  }
 
   // State
   const myHand = ref([])
@@ -76,7 +87,11 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // Setup all listeners once
+  // Since this store is a singleton, these will persist.
+  // Note: We avoid useSocket() because it attaches onUnmounted() which kills listeners on route change.
+
   on('gameStarted', (data) => {
+    console.log('[GameStore] Received gameStarted:', data)
     myHand.value = data.yourHand || []
     opponentHandCount.value = data.opponentHandSize || 0
     stockCount.value = data.stockSize || 0
@@ -87,6 +102,7 @@ export const useGameStore = defineStore('game', () => {
   })
 
   on('opponentJoined', ({ nickname }) => {
+    console.log('[GameStore] Opponent joined:', nickname)
     opponentNickname.value = nickname
   })
 

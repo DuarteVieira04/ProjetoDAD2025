@@ -30,7 +30,9 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
   if (!game) return callback?.({ error: "Game not found" });
 
   // Prevent joining own game
-  if (game.players.player1?.id === game.players.player2?.id) {
+  console.log(`[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players.player1?.id}) vs User (${user.id} - ${typeof user.id})`);
+
+  if (game.players.player1?.id === user.id) {
     return callback?.({ error: "Cannot join your own game" });
   }
 
@@ -55,6 +57,16 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
 
   io.to(gameId).emit("opponentJoined", { nickname: user.nickname });
 
+  socket.broadcast.to(gameId).emit("gameStarted", {
+    yourHand: game.hands.player1,
+    opponentHandSize: game.hands.player2.length,
+    trumpSuit: game.trumpSuit,
+    trumpCardFilename: game.trumpCard.filename,
+    stockSize: game.stock.length + 1,
+    youAre: "player1",
+    firstTurn: "player1",
+  });
+
   socket.emit("gameStarted", {
     yourHand: game.hands.player2,
     opponentHandSize: game.hands.player1.length,
@@ -62,7 +74,7 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     trumpCardFilename: game.trumpCard.filename,
     stockSize: game.stock.length + 1,
     youAre: "player2",
-    firstTurn: "player1",
+    firstTurn: "player1", // Player 1 always starts? Or random? Logic says P1 for now.
   });
 
   if (game.status === "playing") {

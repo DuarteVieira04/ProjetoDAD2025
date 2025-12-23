@@ -24,9 +24,13 @@ export function useSocket() {
     socket.connect()
   })
 
+  // WARNING: removing all listeners on unmount breaks SPA navigation if the socket is shared.
+  // The next component (e.g. GameView) might need listeners that were just wiped by the previous one (e.g. Lobby).
+  /*
   onUnmounted(() => {
     removeAllListeners()
   })
+  */
 
   return {
     socket,

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useAPIStore } from './api'
 import router from '@/router'
 
@@ -16,11 +16,17 @@ export const useAuthStore = defineStore('auth', () => {
     return currentUser.value?.id
   })
 
+  const socket = inject('socket')
+
   const login = async (credentials) => {
     await apiStore.postLogin(credentials)
     const response = await apiStore.getAuthUser()
     currentUser.value = response.data
     localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
+
+    // Reconnect socket to update auth
+    socket.disconnect()
+    socket.connect()
 
     return response.data
   }
@@ -36,6 +42,11 @@ export const useAuthStore = defineStore('auth', () => {
     router.push({ path: '/' }) // ensure navigation
     await apiStore.postLogout()
     currentUser.value = undefined
+    localStorage.removeItem('currentUser')
+
+    // Reconnect socket to clear auth
+    socket.disconnect()
+    socket.connect()
   }
 
   return {

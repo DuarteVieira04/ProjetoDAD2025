@@ -80,11 +80,8 @@ async function handleCreateGame() {
 }
 
 async function handleJoinGame(gameId) {
-  try {
-    await lobbyStore.joinGame(gameId)
-    router.push(`/game/${gameId}`)
-  } catch (err) {
-    alert(err || 'Cannot join game')
-  }
+  // Navigate first, let GameView handle the actual joining. 
+  // This avoids the race condition where 'gameStarted' event arrives before GameView is mounted.
+  router.push(`/game/${gameId}`)
 }
 </script>
