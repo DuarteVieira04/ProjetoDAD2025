@@ -104,22 +104,28 @@ export function executeMove(io, game, playerKey, playedCard) {
         game.currentTrick = [];
 
         // Draw cards
-        if (game.stock.length > 0) {
-            const winnerDraw = game.stock.pop();
-            const loserDraw = game.stock.length > 0 ? game.stock.pop() : null;
+        if (game.stock.length > 0 || game.trumpCard) {
+            const winnerDraw = game.stock.length > 0 ? game.stock.pop() : game.trumpCard;
+            if (winnerDraw === game.trumpCard) game.trumpCard = null; // Mark taken
+
+            let loserDraw = null;
+            if (game.stock.length > 0) {
+                loserDraw = game.stock.pop();
+            } else if (game.trumpCard) {
+                loserDraw = game.trumpCard;
+                game.trumpCard = null; // Mark taken
+            }
 
             const loserKey = winnerKey === "player1" ? "player2" : "player1";
 
-            game.hands[winnerKey].push(winnerDraw);
+            if (winnerDraw) game.hands[winnerKey].push(winnerDraw);
             if (loserDraw) game.hands[loserKey].push(loserDraw);
 
-            io.to(game.id).emit("stockUpdated", { newStockSize: game.stock.length });
+            io.to(game.id).emit("stockUpdated", { newStockSize: game.stock.length + (game.trumpCard ? 1 : 0) });
 
             // Send specific cards to specific players
-            sendCardToPlayer(io, game.id, game.players[winnerKey].id, winnerDraw);
-            if (loserDraw) {
-                sendCardToPlayer(io, game.id, game.players[loserKey].id, loserDraw);
-            }
+            if (winnerDraw) sendCardToPlayer(io, game.id, game.players[winnerKey].id, winnerDraw);
+            if (loserDraw) sendCardToPlayer(io, game.id, game.players[loserKey].id, loserDraw);
         }
 
         // Check game end conditions

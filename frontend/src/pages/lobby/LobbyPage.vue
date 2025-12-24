@@ -9,12 +9,32 @@
             <p class="mt-1 text-muted-foreground text-sm">Create a game or join an open match</p>
           </div>
 
-          <button
-            @click="handleCreateGame"
-            class="inline-flex justify-center items-center bg-primary hover:bg-primary/90 px-4 py-2 rounded-md font-medium text-primary-foreground text-sm transition"
-          >
-            Create Game
-          </button>
+
+          <Dialog>
+            <DialogTrigger as-child>
+              <button
+                class="inline-flex justify-center items-center bg-primary hover:bg-primary/90 px-4 py-2 rounded-md font-medium text-primary-foreground text-sm transition"
+              >
+                Create Game
+              </button>
+            </DialogTrigger>
+            <DialogContent class="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Choose Game Variant</DialogTitle>
+                <DialogDescription>
+                  Select the type of Bisca game you want to create.
+                </DialogDescription>
+              </DialogHeader>
+              <div class="grid gap-4 py-4">
+                <Button @click="handleCreateGame('9')" class="w-full" size="lg">
+                  Bisca de 9 (9 cards)
+                </Button>
+                <Button @click="handleCreateGame('3')" class="w-full" variant="outline" size="lg">
+                  Bisca de 3 (3 cards)
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -59,6 +79,16 @@
 import { onMounted } from 'vue'
 import { useLobbyStore } from '@/stores/lobby'
 import { useRouter } from 'vue-router'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import Button from '@/components/ui/button/Button.vue'
 
 const lobbyStore = useLobbyStore()
 const router = useRouter()
@@ -68,9 +98,9 @@ onMounted(() => {
   // Lobby listeners are assumed to be set up in the store
 })
 
-async function handleCreateGame() {
+async function handleCreateGame(variant = '9') {
   try {
-    const res = await lobbyStore.createGame()
+    const res = await lobbyStore.createGame(variant)
     if (res.gameId) {
       router.push(`/game/${res.gameId}`)
     }

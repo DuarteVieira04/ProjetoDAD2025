@@ -106,6 +106,10 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
 
   io.to(gameId).emit("opponentJoined", { nickname: user.nickname });
 
+  // Determine random first turn
+  const firstTurn = Math.random() < 0.5 ? "player1" : "player2";
+  game.turn = firstTurn;
+
   socket.broadcast.to(gameId).emit("gameStarted", {
     yourHand: game.hands.player1,
     opponentHandSize: game.hands.player2.length,
@@ -113,7 +117,7 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     trumpCardFilename: game.trumpCard.filename,
     stockSize: game.stock.length + 1,
     youAre: "player1",
-    firstTurn: "player1",
+    firstTurn: firstTurn,
   });
 
   socket.emit("gameStarted", {
@@ -123,7 +127,7 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     trumpCardFilename: game.trumpCard.filename,
     stockSize: game.stock.length + 1,
     youAre: "player2",
-    firstTurn: "player1", // Player 1 always starts? Or random? Logic says P1 for now.
+    firstTurn: game.turn,
   });
 
   if (game.status === "playing") {
