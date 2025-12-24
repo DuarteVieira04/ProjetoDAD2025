@@ -27,6 +27,12 @@
             </NavigationMenuLink>
           </NavigationMenuItem>
 
+          <NavigationMenuItem v-if="userLoggedIn">
+            <NavigationMenuLink as-child>
+              <RouterLink to="/shop">Shop</RouterLink>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
           <NavigationMenuItem v-if="!userLoggedIn">
             <NavigationMenuLink as-child>
               <RouterLink to="/login">Login</RouterLink>
