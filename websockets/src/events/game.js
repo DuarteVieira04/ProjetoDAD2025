@@ -1,5 +1,6 @@
 import { createGame, getGame } from "../state/games.js";
 import { startTurnTimer, endGame } from "./timers.js";
+import { awardRemainingCardsToWinner } from "./gameplay.js";
 import { emitOpenGames } from "./lobby.js";
 
 export function resignHandler(io, socket, user, gameId, callback) {
@@ -13,6 +14,10 @@ export function resignHandler(io, socket, user, gameId, callback) {
   if (!loser) return callback?.({ error: "You are not in this game" });
 
   const winner = loser === "player1" ? "player2" : "player1";
+
+  // Forfeit logic: Award all remaining cards to winner
+  awardRemainingCardsToWinner(game, winner);
+
   endGame(game, io, { reason: "resignation", winner });
 }
 
@@ -98,8 +103,11 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
   };
 
   // Update status
-  game.status =
-    game.players.player1 && game.players.player2 ? "playing" : "waiting";
+  const isPlaying = game.players.player1 && game.players.player2;
+  game.status = isPlaying ? "playing" : "waiting";
+  if (isPlaying) {
+    game.startTime = Date.now();
+  }
 
   socket.join(gameId);
   emitOpenGames(io);

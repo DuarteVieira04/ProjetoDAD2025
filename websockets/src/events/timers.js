@@ -1,48 +1,23 @@
 import { deleteGame } from "../state/games.js";
 import { TIMER_SECONDS, GAME_STATUS } from "../constants/index.js";
 import { emitOpenGames } from "./lobby.js";
+import axios from 'axios';
 
-import { executeMove, pickRandomValidCard } from "./gameplay.js";
+import { executeMove, pickRandomValidCard, awardRemainingCardsToWinner } from "./gameplay.js";
 
 export function startTurnTimer(game, io) {
   if (game.timer) clearTimeout(game.timer);
 
   game.timer = setTimeout(() => {
-    // Auto-play
-    const playerKey = game.turn;
-    const card = pickRandomValidCard(game, playerKey);
+    // Timeout behavior: Forfeit game
+    console.log(`[Timer] Check: ${game.turn} timed out.`);
+    const loser = game.turn;
+    const winner = loser === "player1" ? "player2" : "player1";
 
-    if (card) {
-      // Find card index to remove it (executeMove expects it removed?)
-      // Wait, `playCardHandler` removes it. 
-      // `executeMove` expects `playedCard` (already removed/detached object) 
-      // AND it expects the game state to NOT have the card in hand?
-      // Let's check `gameplay.js`.
+    // Award all remaining cards to winner
+    awardRemainingCardsToWinner(game, winner);
 
-      // `playCardHandler`:
-      // const playedCard = hand.splice(cardIndex, 1)[0];
-      // executeMove(..., playedCard);
-
-      // So yes, I need to remove it here.
-      const hand = game.hands[playerKey];
-      const index = hand.findIndex(c => c.suit === card.suit && c.rank === card.rank);
-      if (index !== -1) {
-        const playedCard = hand.splice(index, 1)[0];
-        console.log(`[AutoPlay] ${playerKey} timeout. Playing ${playedCard.suit}-${playedCard.rank}`);
-        executeMove(io, game, playerKey, playedCard);
-      } else {
-        console.error("AutoPlay failed: card not found in hand");
-        // Fallback to end game if something is totally broken
-        const loser = game.turn;
-        const winner = loser === "player1" ? "player2" : "player1";
-        endGame(game, io, { reason: "error_autoplay", winner });
-      }
-    } else {
-      // No cards left? Should be game over already.
-      const loser = game.turn;
-      const winner = loser === "player1" ? "player2" : "player1";
-      endGame(game, io, { reason: "timeout_no_cards", winner });
-    }
+    endGame(game, io, { reason: "timeout", winner });
   }, TIMER_SECONDS * 1000);
 
   io.to(game.id).emit("turnStarted", {
@@ -55,9 +30,11 @@ export function endGame(game, io, extra = {}) {
   if (game.timer) clearTimeout(game.timer);
 
   const { player1, player2 } = game.points;
-  let winner = null;
-  if (player1 >= 61) winner = "player1";
-  else if (player2 >= 61) winner = "player2";
+  let winner = extra.winner || null;
+  if (!winner) {
+    if (player1 >= 61) winner = "player1";
+    else if (player2 >= 61) winner = "player2";
+  }
 
   io.to(game.id).emit("gameEnded", {
     winner,
@@ -66,9 +43,39 @@ export function endGame(game, io, extra = {}) {
     ...extra,
   });
 
+
+  // Save to DB
+  saveGameToDB(game, winner, extra.reason);
+
   game.status = GAME_STATUS.ENDED;
   setTimeout(() => {
     deleteGame(game.id);
     emitOpenGames(io);
   }, 30_000);
+}
+
+async function saveGameToDB(game, winner, reason) {
+  try {
+    const payload = {
+      type: game.variant,
+      status: 'Ended', // Bisca games here are always 'Ended' if we reach this point normally
+      player1_user_id: game.players.player1.id,
+      player2_user_id: game.players.player2.id,
+      winner_user_id: winner === 'player1' ? game.players.player1.id : (winner === 'player2' ? game.players.player2.id : null),
+      loser_user_id: winner === 'player1' ? game.players.player2.id : (winner === 'player2' ? game.players.player1.id : null),
+      player1_points: game.points.player1,
+      player2_points: game.points.player2,
+      is_draw: !winner,
+      total_time: game.startTime ? Math.round((Date.now() - game.startTime) / 1000) : null,
+      // began_at/ended_at ? We don't track start time in memory adequately right now, maybe skip or add later
+      // total_time ...
+    };
+
+    console.log('[GameDB] Saving game...', payload);
+    const response = await axios.post('http://127.0.0.1:8000/api/games', payload);
+    console.log('[GameDB] Saved:', response.data.id);
+
+  } catch (error) {
+    console.error('[GameDB] Failed to save game:', error.response?.data || error.message);
+  }
 }
