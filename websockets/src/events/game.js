@@ -30,6 +30,7 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
 
 
   socket.emit("gameCreated", gameId);
+  callback?.({ gameId });
   //   socket.emit("gameStarted", {
   //     yourHand: game.hands.player1,
   //     opponentHandSize: 0,

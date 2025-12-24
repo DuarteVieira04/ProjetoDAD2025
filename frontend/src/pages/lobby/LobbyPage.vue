@@ -29,8 +29,8 @@
             class="flex justify-between items-center hover:bg-muted/40 p-4 border rounded-xl transition"
           >
             <div class="space-y-1">
-              <p class="font-medium text-sm">{{ game.creator }}'s Game</p>
-              <p class="text-muted-foreground text-xs">Variant: {{ game.variant }}</p>
+              <p class="font-medium text-sm">{{ game.creator.nickname || game.creator }}'s Game</p>
+              <p class="text-muted-foreground text-xs">Bisca: {{ game.variant }}</p>
             </div>
 
             <button

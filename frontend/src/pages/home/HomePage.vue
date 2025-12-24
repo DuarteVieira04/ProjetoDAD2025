@@ -36,6 +36,10 @@ const createNewGame = async () => {
   }
 }
 
+const goToLobby = () => {
+  router.push('/lobby')
+}
+
 // Cleanup listener if component unmounts before gameCreated
 onBeforeUnmount(() => {
   socket.off('gameCreated')
@@ -72,6 +76,12 @@ onBeforeUnmount(() => {
       </template>
       <template v-else>Create New Game (Bisca de 9)</template>
     </Button>
+
+    <div class="mt-4">
+      <Button @click="goToLobby" variant="outline" size="lg">
+        Go to Lobby
+      </Button>
+    </div>
 
     <!-- Optional: list open games for others to join -->
   </div>
