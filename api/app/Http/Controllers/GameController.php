@@ -58,7 +58,31 @@ class GameController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'type' => 'required|in:3,9',
+            'status' => 'required|in:Pending,Playing,Ended,Interrupted',
+            'player1_user_id' => 'required|exists:users,id',
+            'player2_user_id' => 'required|exists:users,id',
+            'winner_user_id' => 'nullable|exists:users,id',
+            'loser_user_id' => 'nullable|exists:users,id',
+            'began_at' => 'nullable|date',
+            'ended_at' => 'nullable|date',
+            'total_time' => 'nullable|numeric',
+            'player1_points' => 'nullable|integer',
+            'player2_points' => 'nullable|integer',
+            'is_draw' => 'boolean',
+        ]);
+
+        if (!isset($validated['began_at'])) {
+            $validated['began_at'] = date('Y-m-d H:i:s');
+        }
+        if (!isset($validated['ended_at'])) {
+            $validated['ended_at'] = date('Y-m-d H:i:s');
+        }
+
+        $game = Game::create($validated);
+
+        return response()->json($game, 201);
     }
 
     /**

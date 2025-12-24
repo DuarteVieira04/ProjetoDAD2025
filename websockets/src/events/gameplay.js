@@ -183,3 +183,37 @@ export function pickRandomValidCard(game, playerKey) {
     // Pick random
     return validCards[Math.floor(Math.random() * validCards.length)];
 }
+
+export function awardRemainingCardsToWinner(game, winnerKey) {
+    let totalPoints = 0;
+
+    // 1. Hands
+    ['player1', 'player2'].forEach(pk => {
+        game.hands[pk].forEach(card => {
+            totalPoints += getCardValue(card.rank);
+        });
+        game.hands[pk] = []; // Clear hand
+    });
+
+    // 2. Stock
+    game.stock.forEach(card => {
+        totalPoints += getCardValue(card.rank);
+    });
+    game.stock = []; // Clear stock
+
+    // 3. Trump card
+    if (game.trumpCard) {
+        totalPoints += getCardValue(game.trumpCard.rank);
+        game.trumpCard = null;
+    }
+
+    // 4. Current trick
+    game.currentTrick.forEach(item => {
+        totalPoints += getCardValue(item.card.rank);
+    });
+    game.currentTrick = [];
+
+    // Add to winner's score
+    game.points[winnerKey] += totalPoints;
+    console.log(`[Forfeit] Awarded ${totalPoints} points to ${winnerKey}`);
+}
