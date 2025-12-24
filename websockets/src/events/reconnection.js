@@ -18,13 +18,18 @@ export function handleDisconnect(io, socket) {
 export function handleReconnect(io, socket) {
   const user = socket.handshake.auth;
 
+  console.log(user.id);
   for (const game of getAllGames()) {
     let role = null;
     if (game.players.player1?.id === user.id) role = "player1";
     else if (game.players.player2?.id === user.id) role = "player2";
 
-    if (role && game.players[role].disconnected) {
-      game.players[role].disconnected = false;
+    if (role && game?.players[role]?.disconnected) {
+      const player = game?.players?.[role];
+      if (player) {
+        player.disconnected = false;
+      }
+
       socket.join(game.id);
       socket.emit("gameStarted", {
         yourHand: game.hands[role],
