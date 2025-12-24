@@ -4,6 +4,8 @@ import { useAPIStore } from './api'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
+  const API_BASE_URL = inject('apiBaseURL')
+
   const apiStore = useAPIStore()
 
   const currentUser = ref(JSON.parse(localStorage.getItem('currentUser')) || undefined)
@@ -21,7 +23,13 @@ export const useAuthStore = defineStore('auth', () => {
   const login = async (credentials) => {
     await apiStore.postLogin(credentials)
     const response = await apiStore.getAuthUser()
-    currentUser.value = response.data
+    const user = response.data
+    if (user.photo_avatar_filename) {
+      console.log({ API_BASE_URL, type: typeof API_BASE_URL })
+      const baseUrl = API_BASE_URL.replace('/api', '')
+      user.avatar_url = `${baseUrl}/storage/photos_avatars/${user.photo_avatar_filename}`
+    }
+    currentUser.value = user
     localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
 
     // Reconnect socket to update auth

@@ -19,7 +19,7 @@
             <Avatar class="w-20 h-20">
               <AvatarImage
                 v-if="displayedUser?.photo_avatar_filename"
-                :src="`/uploads/avatars/${displayedUser.photo_avatar_filename}`"
+                :src="displayedUser.avatar_url"
                 alt="User avatar"
               />
               <AvatarFallback>{{ initials }}</AvatarFallback>

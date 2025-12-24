@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, inject } from 'vue'
 import axios from 'axios'
-import { useAPIStore } from './api'
 
 export const useAdminStore = defineStore('admin', () => {
   const API_BASE_URL = inject('apiBaseURL')
@@ -48,7 +47,13 @@ export const useAdminStore = defineStore('admin', () => {
   }
 
   const getUserDetails = async (userID) => {
-    const user = await axios.get(`${API_BASE_URL}/admin/user/${userID}`)
+    const response = await axios.get(`${API_BASE_URL}/admin/user/${userID}`)
+    const user = response.data
+    if (user.photo_avatar_filename) {
+      const baseUrl = API_BASE_URL.replace('/api', '')
+      user.avatar_url = `${baseUrl}/storage/photos_avatars/${user.photo_avatar_filename}`
+    }
+
     return user
   }
 
