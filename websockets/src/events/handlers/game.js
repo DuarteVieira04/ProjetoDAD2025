@@ -1,7 +1,7 @@
-import { createGame, getGame } from "../state/games.js";
-import { startTurnTimer, endGame } from "./timers.js";
-import { awardRemainingCardsToWinner } from "./gameplay.js";
-import { emitOpenGames } from "./lobby.js";
+import { createGame, getGame } from "../../state/games.js";
+import { startTurnTimer, endGame } from "../timers/timers.js";
+import { awardRemainingCardsToWinner } from "../gameplay/gameplay.js";
+import { emitOpenGames } from "../lobby/lobby.js";
 
 export function resignHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);
@@ -32,8 +32,6 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
   socket.join(gameId);
   emitOpenGames(io);
 
-
-
   socket.emit("gameCreated", gameId);
   callback?.({ gameId });
   //   socket.emit("gameStarted", {
@@ -52,7 +50,10 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
   if (!game) return callback?.({ error: "Game not found" });
 
   // Prevent joining own game
-  console.log(`[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players.player1?.id}) vs User (${user.id} - ${typeof user.id})`);
+  console.log(
+    `[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players
+      .player1?.id}) vs User (${user.id} - ${typeof user.id})`
+  );
 
   // Check if rejoining (Player 1)
   if (game.players.player1?.id === user.id) {

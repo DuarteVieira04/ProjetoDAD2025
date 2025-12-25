@@ -1,9 +1,13 @@
-import { deleteGame } from "../state/games.js";
-import { TIMER_SECONDS, GAME_STATUS } from "../constants/index.js";
-import { emitOpenGames } from "./lobby.js";
-import axios from 'axios';
+import { deleteGame } from "../../state/games.js";
+import { TIMER_SECONDS, GAME_STATUS } from "../../constants/index.js";
+import { emitOpenGames } from "../lobby/lobby.js";
+import axios from "axios";
 
-import { executeMove, pickRandomValidCard, awardRemainingCardsToWinner } from "./gameplay.js";
+import {
+  executeMove,
+  pickRandomValidCard,
+  awardRemainingCardsToWinner,
+} from "../gameplay/gameplay.js";
 
 export function startTurnTimer(game, io) {
   if (game.timer) clearTimeout(game.timer);
@@ -43,7 +47,6 @@ export function endGame(game, io, extra = {}) {
     ...extra,
   });
 
-
   // Save to DB
   saveGameToDB(game, winner, extra.reason);
 
@@ -58,24 +61,41 @@ async function saveGameToDB(game, winner, reason) {
   try {
     const payload = {
       type: game.variant,
-      status: 'Ended', // Bisca games here are always 'Ended' if we reach this point normally
+      status: "Ended", // Bisca games here are always 'Ended' if we reach this point normally
       player1_user_id: game.players.player1.id,
       player2_user_id: game.players.player2.id,
-      winner_user_id: winner === 'player1' ? game.players.player1.id : (winner === 'player2' ? game.players.player2.id : null),
-      loser_user_id: winner === 'player1' ? game.players.player2.id : (winner === 'player2' ? game.players.player1.id : null),
+      winner_user_id:
+        winner === "player1"
+          ? game.players.player1.id
+          : winner === "player2"
+          ? game.players.player2.id
+          : null,
+      loser_user_id:
+        winner === "player1"
+          ? game.players.player2.id
+          : winner === "player2"
+          ? game.players.player1.id
+          : null,
       player1_points: game.points.player1,
       player2_points: game.points.player2,
       is_draw: !winner,
-      total_time: game.startTime ? Math.round((Date.now() - game.startTime) / 1000) : null,
+      total_time: game.startTime
+        ? Math.round((Date.now() - game.startTime) / 1000)
+        : null,
       // began_at/ended_at ? We don't track start time in memory adequately right now, maybe skip or add later
       // total_time ...
     };
 
-    console.log('[GameDB] Saving game...', payload);
-    const response = await axios.post('http://127.0.0.1:8000/api/games', payload);
-    console.log('[GameDB] Saved:', response.data.id);
-
+    console.log("[GameDB] Saving game...", payload);
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/games",
+      payload
+    );
+    console.log("[GameDB] Saved:", response.data.id);
   } catch (error) {
-    console.error('[GameDB] Failed to save game:', error.response?.data || error.message);
+    console.error(
+      "[GameDB] Failed to save game:",
+      error.response?.data || error.message
+    );
   }
 }

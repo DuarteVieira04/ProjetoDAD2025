@@ -1,4 +1,4 @@
-import { getOpenGames } from "../state/games.js";
+import { getOpenGames } from "../../state/games.js";
 
 export function emitOpenGames(io) {
   const games = getOpenGames().map((g) => ({
