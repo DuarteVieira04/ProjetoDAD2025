@@ -21,9 +21,8 @@ app.use(createPinia())
 const socket = io(wsConnection, {
   reconnectionAttempts: 10,
   auth: (cb) => {
-    const authStore = useAuthStore() // Now safe: inside Pinia app context
+    const authStore = useAuthStore()
     const user = authStore.currentUser
-    console.log({ socket: user })
     cb(user)
   },
 })

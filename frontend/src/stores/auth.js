@@ -41,11 +41,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAdmin = () => currentUser?.value?.type === 'A'
 
-  const getUser = async () => {
-    const response = await apiStore.getAuthUser()
-    currentUser.value = response.data
-  }
-
   const logout = async () => {
     router.push({ path: '/' }) // ensure navigation
     await apiStore.postLogout()

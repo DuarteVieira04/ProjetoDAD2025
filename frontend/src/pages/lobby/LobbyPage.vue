@@ -9,7 +9,6 @@
             <p class="mt-1 text-muted-foreground text-sm">Create a game or join an open match</p>
           </div>
 
-
           <Dialog>
             <DialogTrigger as-child>
               <button
@@ -25,7 +24,7 @@
                   Select the type of Bisca game you want to create.
                 </DialogDescription>
               </DialogHeader>
-              <div class="grid gap-4 py-4">
+              <div class="gap-4 grid py-4">
                 <Button @click="handleCreateGame('9')" class="w-full" size="lg">
                   Bisca de 9 (9 cards)
                 </Button>
@@ -83,7 +82,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -110,7 +108,7 @@ async function handleCreateGame(variant = '9') {
 }
 
 async function handleJoinGame(gameId) {
-  // Navigate first, let GameView handle the actual joining. 
+  // Navigate first, let GameView handle the actual joining.
   // This avoids the race condition where 'gameStarted' event arrives before GameView is mounted.
   router.push(`/game/${gameId}`)
 }

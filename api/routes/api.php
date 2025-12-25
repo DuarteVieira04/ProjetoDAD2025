@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CoinsController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\MatchController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureUser;
@@ -47,13 +48,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Gotta look further into these
     Route::get('/coins/test', [CoinsController::class, 'getUserCoinsTransactions']);
     Route::get('/coins/balance/{userId}', [CoinsController::class, 'getUserCoins']);
+
+    // * Matches */
+    Route::post('/matches', [MatchController::class, 'create']);
+    Route::post('/matches/{match}/join', [MatchController::class, 'join']);
 });
+
+Route::get('/matches', [MatchController::class, 'list']);
 
 Route::apiResource('games', GameController::class);
 
 // Temporary Test Route for Game Logic
 Route::get('/test-game-logic', function () {
-    $game = new \App\Game\BiscaGameState(9); // Bisca de 9
+    $game = new \App\Game\BiscaGameState(9);  // Bisca de 9
     $game->start();
 
     // Simulate a trick
@@ -71,7 +78,7 @@ Route::get('/test-game-logic', function () {
         'p1_hand_count' => $game->player1Hand->count(),
         'points_card1' => $card1->getPoints(),
         'points_card2' => $card2->getPoints(),
-        'marks_test_capote' => \App\Game\BiscaGameLogic::calculateMarks(100), // Should be 2
-        'marks_test_bandeira' => \App\Game\BiscaGameLogic::calculateMarks(120), // Should be 4
+        'marks_test_capote' => \App\Game\BiscaGameLogic::calculateMarks(100),  // Should be 2
+        'marks_test_bandeira' => \App\Game\BiscaGameLogic::calculateMarks(120),  // Should be 4
     ]);
 });
