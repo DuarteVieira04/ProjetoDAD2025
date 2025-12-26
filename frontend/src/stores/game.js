@@ -106,10 +106,20 @@ export const useGameStore = defineStore('game', () => {
     myHand.value = data.yourHand || []
     opponentHandCount.value = data.opponentHandSize || 0
     stockCount.value = data.stockSize || 0
-    trumpCard.value = { filename: data.trumpCardFilename }
+    trumpCard.value = data.trumpCardFilename ? { filename: data.trumpCardFilename } : null
     trumpSuit.value = data.trumpSuit
     youAre.value = data.youAre
-    opponentNickname.value = 'Opponent'
+
+    // Use provided nickname or default based on scenario
+    if (data.opponentNickname) {
+      opponentNickname.value = data.opponentNickname
+    } else {
+      opponentNickname.value = 'Opponent' // Fallback for multiplayer
+    }
+
+    // Set turn immediately
+    isMyTurn.value = data.firstTurn === data.youAre
+
     status.value = 'playing'
   })
 

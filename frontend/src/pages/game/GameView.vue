@@ -198,8 +198,8 @@
             </div>
         </div>
 
-        <Button size="lg" class="w-full" @click="$router.push('/lobby')">
-            Back to Lobby
+        <Button size="lg" class="w-full" @click="$router.push(game.opponentNickname === 'Bot' ? '/' : '/lobby')">
+            {{ game.opponentNickname === 'Bot' ? 'Back to Home' : 'Back to Lobby' }}
         </Button>
       </Card>
     </div>
@@ -237,8 +237,12 @@ onMounted(() => {
   // Reset store for a new game session
   // game.reset() // <-- Actually, maybe we shouldn't reset if we are re-entering? 
   // Ideally, reset before joining.
-  game.reset()
-  game.gameId = gameId
+  // Only reset if we are entering a DIFFERENT game.
+  // This preserves the state if we just created the game (Lobby -> GameView transition)
+  if (game.gameId !== gameId) {
+    game.reset()
+    game.gameId = gameId
+  }
 
   // Try to join the game.
   // If we are the creator (Player 1), this will fail with "Cannot join your own game",

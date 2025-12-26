@@ -33,12 +33,6 @@ export const useMatchStore = defineStore('match', () => {
     }
   }
 
-  const createMatch = async (data) => {
-    await axios.post(`${API_BASE_URL}/matches`, {
-      ...data,
-    })
-  }
-
   const joinMatch = async (match) => {
     await axios.post(`${API_BASE_URL}/matches/${match.id}/join`)
   }
@@ -52,6 +46,5 @@ export const useMatchStore = defineStore('match', () => {
     hasMatches,
 
     fetchMatches,
-    createMatch,
   }
 })

@@ -1,26 +1,8 @@
 import { getGame } from "../../state/games.js";
 import { startTurnTimer, endGame } from "../timers/timers.js";
 import { CARD_POINTS } from "../../constants/index.js";
-
-function getCardValue(rank) {
-  return CARD_POINTS[rank] || 0;
-}
-
-function getCardStrength(rank) {
-  const strengthMap = {
-    1: 120,
-    7: 110,
-    "13-KING": 100,
-    "11-JACK": 90,
-    "12-QUEEN": 80,
-    6: 60,
-    5: 50,
-    4: 40,
-    3: 30,
-    2: 20,
-  };
-  return strengthMap[rank] || 0;
-}
+import { getCardValue, getCardStrength } from "../../utils/cards.js";
+import { calculateBotMove } from "../../bot/logic.js";
 
 export function playCardHandler(io, socket, user, { gameId, card }, callback) {
   const game = getGame(gameId);
@@ -34,8 +16,8 @@ export function playCardHandler(io, socket, user, { gameId, card }, callback) {
     game.players.player1.id === user.id
       ? "player1"
       : game.players.player2.id === user.id
-      ? "player2"
-      : null;
+        ? "player2"
+        : null;
   if (!playerKey) return callback?.({ error: "You are not in this game" });
 
   // Check turn
@@ -71,6 +53,13 @@ export function executeMove(io, game, playerKey, playedCard) {
     // Switch turn
     game.turn = playerKey === "player1" ? "player2" : "player1";
     startTurnTimer(game, io);
+
+    // If it's now Bot's turn to respond (Bot is player2)
+    if (game.isSinglePlayer && game.turn === "player2") {
+      setTimeout(() => {
+        triggerBotMove(game, io);
+      }, 1000 + Math.random() * 500);
+    }
   } else {
     // Trick complete
     const c1 = game.currentTrick[0];
@@ -144,7 +133,15 @@ export function executeMove(io, game, playerKey, playedCard) {
 
     setTimeout(() => {
       io.to(game.id).emit("roundEnded", {});
-      startTurnTimer(game, io);
+
+      // Check for Bot Turn
+      if (game.isSinglePlayer && game.turn === "player2") {
+        setTimeout(() => {
+          triggerBotMove(game, io);
+        }, 1000 + Math.random() * 1000); // 1-2s delay
+      } else {
+        startTurnTimer(game, io);
+      }
     }, 2000);
   }
 }
@@ -161,32 +158,25 @@ function sendCardToPlayer(io, gameId, userId, card) {
   }
 }
 
-export function pickRandomValidCard(game, playerKey) {
-  const hand = game.hands[playerKey];
-  if (hand.length === 0) return null;
+export function triggerBotMove(game, io) {
+  console.log("[Bot] Thinking...");
+  const move = calculateBotMove(game, "player2");
 
-  let validCards = [];
-
-  // If following a lead
-  if (game.currentTrick.length > 0) {
-    const leadCard = game.currentTrick[0].card;
-    // Filter by suit
-    const sameSuit = hand.filter((c) => c.suit === leadCard.suit);
-    if (sameSuit.length > 0) {
-      validCards = sameSuit;
+  if (move) {
+    console.log(`[Bot] Plays ${move.suit}-${move.rank}`);
+    // Remove from hand is handled in playCardHandler, but here we call executeMove directly.
+    // We must remove it manually first.
+    const hand = game.hands.player2;
+    const index = hand.findIndex(c => c.suit === move.suit && c.rank === move.rank);
+    if (index !== -1) {
+      const playedCard = hand.splice(index, 1)[0];
+      executeMove(io, game, "player2", playedCard);
     } else {
-      // Can play any card
-      validCards = hand;
+      console.error("[Bot] Error: Selected card not in hand!");
     }
   } else {
-    // Leading: any card
-    validCards = hand;
+    console.error("[Bot] No valid move found!");
   }
-
-  if (validCards.length === 0) return hand[0]; // Fallback (shouldn't happen with logic above)
-
-  // Pick random
-  return validCards[Math.floor(Math.random() * validCards.length)];
 }
 
 export function awardRemainingCardsToWinner(game, winnerKey) {

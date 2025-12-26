@@ -51,9 +51,9 @@ const logout = () => {
   toast.promise(authStore.logout(), {
     loading: 'Calling API',
     success: () => {
-      return 'Logout Sucessfull '
+      return 'Logout Successful '
     },
-    error: (data) => `[API] Error saving game - ${data?.response?.data?.message}`,
+    error: (data) => `[API] Error logging out - ${data?.response?.data?.message || data?.message || 'Unknown error'}`,
   })
 }
 

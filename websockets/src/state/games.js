@@ -30,7 +30,10 @@ export function getOpenGames() {
   const openGames = [];
   for (const game of games.values()) {
     console.log(game);
-    if (game.status === "waiting") openGames.push(game);
+    // Explicitly exclude single player games
+    if (game.status === "waiting" && !game.isSinglePlayer) {
+      openGames.push(game);
+    }
   }
   console.log({ openGamesLength: openGames.length });
   return openGames;

@@ -1,19 +1,15 @@
 import { joinLobby } from "./lobby/lobby.js";
-import {
-  createGameHandler,
-  joinGameHandler,
-  resignHandler,
-} from "./handlers/game.js";
+import { createGameHandler, joinGameHandler, resignHandler } from "./handlers/game.js";
 import { playCardHandler } from "./gameplay/gameplay.js";
 import { handleDisconnect, handleReconnect } from "./reconnection.js";
 
 export function handleConnectionEvents(io, socket) {
-  const user = socket.handshake.auth;
-  console.log(
-    `[Connection] User connected: ${user?.nickname || "Anonymous"} (${
-      socket.id
-    })`
-  );
+  const user = socket.handshake.auth || {};
+  if (!user.id) {
+    user.id = socket.id;
+    user.nickname = user.nickname || "Anonymous";
+  }
+  console.log(`[Connection] User connected: ${user.nickname} (${user.id})`);
 
   socket.on("joinLobby", () => {
     console.log(`[Lobby] Socket ${socket.id} joining lobby.`);
