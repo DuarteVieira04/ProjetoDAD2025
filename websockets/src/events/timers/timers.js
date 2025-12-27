@@ -5,7 +5,6 @@ import axios from "axios";
 
 import {
   executeMove,
-  pickRandomValidCard,
   awardRemainingCardsToWinner,
 } from "../gameplay/gameplay.js";
 
@@ -68,14 +67,14 @@ async function saveGameToDB(game, winner, reason) {
         winner === "player1"
           ? game.players.player1.id
           : winner === "player2"
-          ? game.players.player2.id
-          : null,
+            ? game.players.player2.id
+            : null,
       loser_user_id:
         winner === "player1"
           ? game.players.player2.id
           : winner === "player2"
-          ? game.players.player1.id
-          : null,
+            ? game.players.player1.id
+            : null,
       player1_points: game.points.player1,
       player2_points: game.points.player2,
       is_draw: !winner,
