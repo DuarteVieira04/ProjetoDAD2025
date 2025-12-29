@@ -27,6 +27,18 @@
             </NavigationMenuLink>
           </NavigationMenuItem>
 
+          <NavigationMenuItem>
+                <span class="flex items-center gap-2">
+                Coins:  {{ userCoins }}
+                </span>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem v-if="userLoggedIn">
+            <NavigationMenuLink as-child>
+              
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
           <NavigationMenuItem v-if="userLoggedIn">
             <NavigationMenuLink as-child>
               <RouterLink to="/shop">Shop</RouterLink>
@@ -173,6 +185,10 @@ const emit = defineEmits(['logout'])
 defineProps({
   userLoggedIn: Boolean,
   isAdmin: Boolean,
+  userCoins: {
+    type: Number,
+    default: 0
+  }
 })
 
 const open = ref(false)
@@ -181,4 +197,5 @@ const handleLogout = () => {
   open.value = false
   emit('logout')
 }
+
 </script>

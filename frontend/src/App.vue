@@ -20,6 +20,7 @@
           @logout="logout"
           :userLoggedIn="authStore.isLoggedIn"
           :isAdmin="authStore.isAdmin()"
+          :userCoins="authStore.userCoins"
         />
       </div>
     </div>
@@ -59,6 +60,9 @@ const logout = () => {
 
 onMounted(() => {
   socketStore.handleConnection()
+  if (authStore.isLoggedIn) {
+    authStore.fetchUserCoins()
+  }
 })
 </script>
 

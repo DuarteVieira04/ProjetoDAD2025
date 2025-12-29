@@ -1,8 +1,12 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { useSocket } from '@/composables/useSocket.js'
+import { useAPIStore } from './api'
 
 export const useLobbyStore = defineStore('lobby', () => {
+
+  const apiStore = useAPIStore()
+
   const { emit, on } = useSocket()
 
   const openGames = ref([]) // [{ gameId, creator, variant }]
@@ -34,10 +38,15 @@ export const useLobbyStore = defineStore('lobby', () => {
     })
   }
 
+  const getCurrentUserCoins = (userId) => {
+    return apiStore.getCurrentUserCoins(userId)
+  }
+
   return {
     openGames,
     joinLobby,
     createGame,
     joinGame,
+    getCurrentUserCoins,
   }
 })

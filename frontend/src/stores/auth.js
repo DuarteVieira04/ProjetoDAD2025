@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', () => {
   const apiStore = useAPIStore()
 
   const currentUser = ref(JSON.parse(localStorage.getItem('currentUser')) || undefined)
+  const userCoins = ref(0)
 
   const isLoggedIn = computed(() => {
     return currentUser.value !== undefined
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.avatar_url = `${baseUrl}/storage/photos_avatars/${user.photo_avatar_filename}`
     }
     currentUser.value = user
+    fetchUserCoins()
     localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
 
     // Reconnect socket to update auth
@@ -41,10 +43,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAdmin = () => currentUser?.value?.type === 'A'
 
+  const fetchUserCoins = async () => {
+    if (!isLoggedIn.value) return
+    try {
+      const response = await apiStore.getAuthUserCoinsBalance()
+      userCoins.value = response.data.balance
+    } catch (error) {
+      console.error('Error fetching user coins:', error)
+    }
+  }
+
   const logout = async () => {
     router.push({ path: '/' }) // ensure navigation
     await apiStore.postLogout()
     currentUser.value = undefined
+    userCoins.value = 0
     localStorage.removeItem('currentUser')
 
     // Reconnect socket to clear auth
@@ -54,10 +67,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     currentUser,
+    userCoins,
     isAdmin,
     isLoggedIn,
     currentUserID,
     login,
     logout,
+    fetchUserCoins,
   }
 })

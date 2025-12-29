@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, onBeforeUnmount, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { useAuthStore } from '@/stores/auth'
@@ -14,6 +14,8 @@ const router = useRouter()
 const socket = inject('socket')
 
 const isCreating = ref(false)
+
+const userCoins = reactive({ value: 0 })
 
 // Attach listener early for the creator
 socket.once('gameCreated', (gameId) => {
@@ -30,6 +32,26 @@ socket.once('gameCreated', (gameId) => {
 onBeforeUnmount(() => {
   socket.off('gameCreated')
 })
+
+const fetchUserCoins = async () => {
+  try {
+    const userId = authStore.user?.id
+    if (!userId) {
+      userCoins.value = 0
+      return
+    }
+    const response = await fetch(`/api/coins/balance/${userId}`)
+    const data = await response.json()
+    if (response.ok) {
+      userCoins.value = data.balance
+    } else {
+      console.error(data.message)
+    }
+  } catch (error) {
+    console.error('Error fetching user coins:', error)
+  }
+}
+
 
 const createNewGame = async (variant = '9') => {
   if (isCreating.value) return
