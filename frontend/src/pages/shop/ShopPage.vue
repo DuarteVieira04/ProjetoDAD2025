@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6 mx-auto p-6 max-w-lg">
 
-    <Button class="w-full" variant="outline" @click="$router.push('/shop/history')">View Purchase History</Button>
+    <Button class="w-full" variant="outline" @click="$router.push('/shop/history')">View Coin Transaction History</Button>
     <Card>
       <CardHeader>
         <CardTitle>Purchase Coins</CardTitle>
