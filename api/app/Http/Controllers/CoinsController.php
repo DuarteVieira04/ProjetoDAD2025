@@ -52,6 +52,30 @@ class CoinsController extends Controller
         return response()->json($transactions);
     }
 
+    public function getAuthUserPurchaseHistory(Request $request)
+    {
+        $user = $request->user('sanctum');
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        $purchases = \App\Models\CoinPurchase::where('user_id', $user->id)
+            ->orderBy('purchase_datetime', 'desc')
+            ->get()
+            ->map(function ($purchase) {
+                return [
+                    'id' => $purchase->id,
+                    'purchase_datetime' => $purchase->purchase_datetime,
+                    'euros' => $purchase->euros,
+                    'payment_type' => $purchase->payment_type->value,
+                    'payment_reference' => $purchase->payment_reference,
+                ];
+            });
+
+        return response()->json($purchases);
+    }
+
     public function getUserCoinsTransactions(Request $request)
     {
         $data = $request->validate([

@@ -6,6 +6,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const apiStore = useAPIStore()
 
   const transactions = ref([])
+  const purchases = ref([])
   const loading = ref(false)
   const error = ref('')
 
@@ -16,6 +17,19 @@ export const useTransactionsStore = defineStore('transactions', () => {
     } catch (err) {
       console.error('Error fetching transactions:', err)
       transactions.value = []
+    }
+  }
+
+  const getAuthUserPurchaseHistory = async () => {
+    loading.value = true
+    try {
+      const response = await apiStore.getAuthUserPurchaseHistory()
+      purchases.value = response.data
+    } catch (err) {
+      console.error('Error fetching purchase history:', err)
+      purchases.value = []
+    } finally {
+      loading.value = false
     }
   }
 
@@ -46,9 +60,11 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
   return {
     transactions,
+    purchases,
     loading,
     error,
     getAuthUserCoinsTransactions,
+    getAuthUserPurchaseHistory,
     purchaseCoins,
   }
 })

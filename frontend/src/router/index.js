@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
 import { toast } from 'vue-sonner'
 import ShopPage from '@/pages/shop/ShopPage.vue'
+import PurchaseHistoryPage from '@/pages/shop/PurchaseHistoryPage.vue'
 import GameView from '@/pages/game/GameView.vue'
 import LobbyPage from '@/pages/lobby/LobbyPage.vue'
 import ViewMatches from '@/pages/matches/ViewMatches.vue'
@@ -60,6 +61,14 @@ const router = createRouter({
       path: '/shop',
       name: 'shop',
       component: ShopPage,
+    },
+    {
+      path: '/shop/history',
+      name: 'purchase-history',
+      component: PurchaseHistoryPage,
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/testing',

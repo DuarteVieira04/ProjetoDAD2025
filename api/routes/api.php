@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/coins/balance', [CoinsController::class, 'getCurrentUserCoins']);
     Route::get('/coins/transaction', [CoinsController::class, 'getAuthUserCoinsTransactions']);
+    Route::get('/coins/purchases', [CoinsController::class, 'getAuthUserPurchaseHistory']);
     Route::post('/coins/purchase', [CoinsController::class, 'purchase'])->middleware([EnsureUser::class]);
 
     // * Admin Coin Endpoints *//

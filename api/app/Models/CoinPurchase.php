@@ -4,12 +4,9 @@ namespace App\Models;
 
 use App\Enums\PaymentMethodEnum;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CoinPurchase extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'coin_purchases';
 
     protected $fillable = [
