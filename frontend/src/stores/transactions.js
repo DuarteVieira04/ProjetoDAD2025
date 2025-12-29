@@ -20,6 +20,16 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
   }
 
+  const getUserCoinsTransactions = async (userId) => {
+    try {
+      const response = await apiStore.getUserCoinsTransactions(userId)
+      transactions.value = response.data
+    } catch (err) {
+      console.error('Error fetching user transactions:', err)
+      transactions.value = []
+    }
+  }
+
   const getAuthUserPurchaseHistory = async () => {
     loading.value = true
     try {
@@ -64,6 +74,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     loading,
     error,
     getAuthUserCoinsTransactions,
+    getUserCoinsTransactions,
     getAuthUserPurchaseHistory,
     purchaseCoins,
   }
