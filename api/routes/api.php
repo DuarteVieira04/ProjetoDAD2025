@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 
+Route::get('/statistics/public', [StatisticsController::class, 'getPublicStatistics']);
+
 Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
     // ! Admin Routes
     Route::get('/admin/users', [AdminUserController::class, 'getUsers']);
@@ -21,7 +23,7 @@ Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
     Route::put('/admin/user/{userId}', [AdminUserController::class, 'blockUser']);
 
     // ! Statistics Route
-    Route::get('/statistics', [StatisticsController::class, 'getStatistics']);
+    Route::get('/statistics', action: [StatisticsController::class, 'getAdminStatistics']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -53,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // * Matches */
     Route::post('/matches', [MatchController::class, 'create']);
     Route::post('/matches/{match}/join', [MatchController::class, 'join']);
+
+    Route::get('/statistics/me', [StatisticsController::class, 'getUserStatistics']);
 });
 
 Route::get('/matches', [MatchController::class, 'list']);
