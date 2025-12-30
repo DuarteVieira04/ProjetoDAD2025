@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
     Route::get('/admin/users', [AdminUserController::class, 'getUsers']);
     Route::get('/admin/user/{userId}', [AdminUserController::class, 'getUserDetails']);
     Route::put('/admin/user/{userId}', [AdminUserController::class, 'blockUser']);
+    Route::delete('/admin/user/{user}', [AdminUserController::class, 'destroy']);
 
     // ! Statistics Route
     Route::get('/statistics', action: [StatisticsController::class, 'getAdminStatistics']);
@@ -35,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     Route::put('/users/me', [AuthController::class, 'update']);
+    Route::delete('/users/me/delete', [AuthController::class, 'delete']);
 
     Route::put('/users/me/password', [AuthController::class, 'changePassword']);
 

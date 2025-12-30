@@ -28,7 +28,7 @@
           </NavigationMenuItem>
 
           <NavigationMenuItem>
-            <NavigationMenuLink as-child>
+            <NavigationMenuLink>
               <span class="flex items-center cursor-default"> Coins: {{ userCoins }} </span>
             </NavigationMenuLink>
           </NavigationMenuItem>
