@@ -28,15 +28,13 @@
           </NavigationMenuItem>
 
           <NavigationMenuItem>
-                <span class="flex items-center gap-2">
-                Coins:  {{ userCoins }}
-                </span>
+            <NavigationMenuLink as-child>
+              <span class="flex items-center cursor-default"> Coins: {{ userCoins }} </span>
+            </NavigationMenuLink>
           </NavigationMenuItem>
 
           <NavigationMenuItem v-if="userLoggedIn">
-            <NavigationMenuLink as-child>
-              
-            </NavigationMenuLink>
+            <NavigationMenuLink as-child> </NavigationMenuLink>
           </NavigationMenuItem>
 
           <NavigationMenuItem v-if="userLoggedIn">
@@ -187,8 +185,8 @@ defineProps({
   isAdmin: Boolean,
   userCoins: {
     type: Number,
-    default: 0
-  }
+    default: 0,
+  },
 })
 
 const open = ref(false)
@@ -197,5 +195,4 @@ const handleLogout = () => {
   open.value = false
   emit('logout')
 }
-
 </script>
