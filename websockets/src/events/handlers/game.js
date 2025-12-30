@@ -3,6 +3,9 @@ import { startTurnTimer, endGame } from "../timers/timers.js";
 import { awardRemainingCardsToWinner, triggerBotMove } from "../gameplay/gameplay.js";
 import { emitOpenGames } from "../lobby/lobby.js";
 
+import { getMatch } from "../../state/matches.js";
+import { endMatch } from "../timers/matchTimers.js";
+
 export function resignHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);
   if (!game) return callback?.({ error: "Game not found" });
@@ -15,9 +18,32 @@ export function resignHandler(io, socket, user, gameId, callback) {
 
   const winner = loser === "player1" ? "player2" : "player1";
 
-  // Forfeit logic: Award all remaining cards to winner
-  awardRemainingCardsToWinner(game, winner);
+  // Forfeit logic: Award all remaining cards to winner (Standard Game Logic)
+  // But wait, if it's a MATCH, resignation forfeits the WHOLE match.
 
+  if (game.matchId) {
+    const match = getMatch(game.matchId);
+    if (match) {
+      console.log(`[Resign] Player ${user.nickname} resigned. Forfeiting Match ${match.id}`);
+
+      // Set marks to allow immediate win logic if needed, or just force end.
+      // Rule: "forfeits all remaining games".
+      // So winner gets the match win.
+
+      // We can set marks to 4 for winner to simulate 'marks reached' or just pass a specific reason
+      match.marks[winner] = 4;
+
+      // Also fail the current game so it closes properly?
+      game.status = "ended";
+      // awardRemainingCards... logic is mostly visual for points, but for a full forfeit it matters less.
+
+      endMatch(match, io, { winnerKey: winner, reason: "forfeit" });
+      return;
+    }
+  }
+
+  // Normal Standalone Resignation
+  awardRemainingCardsToWinner(game, winner);
   endGame(game, io, { reason: "resignation", winner });
 }
 
