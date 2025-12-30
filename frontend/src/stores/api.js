@@ -74,6 +74,10 @@ export const useAPIStore = defineStore('api', () => {
   const purchaseCoins = (payload) => axios.post(`${API_BASE_URL}/coins/purchase`, payload)
   const getAuthUserCoinsBalance = () => axios.get(`${API_BASE_URL}/coins/balance`)
 
+  //Statistics
+  const getPublicStatistics = () => axios.get(`${API_BASE_URL}/statistics/public`)
+  const getUserStatistics = () => axios.get(`${API_BASE_URL}/statistics/me`)
+
   return {
     token,
     getToken,
@@ -87,5 +91,7 @@ export const useAPIStore = defineStore('api', () => {
     getAuthUserPurchaseHistory,
     purchaseCoins,
     getAuthUserCoinsBalance,
+    getPublicStatistics,
+    getUserStatistics,
   }
 })
