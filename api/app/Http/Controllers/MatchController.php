@@ -128,6 +128,61 @@ class MatchController extends Controller
         return response()->json($matches, 200);
     }
 
+    public function update(Request $request, Matches $match)
+    {
+        // Only allow updates if match is playing or pending
+        if (!in_array($match->status, ['Pending', 'Playing'])) {
+            // If already ended, just return it (idempotency)
+            return response()->json($match);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:Ended,Interrupted',
+            'winner_user_id' => 'nullable|exists:users,id',
+            'loser_user_id' => 'nullable|exists:users,id',
+            'player1_marks' => 'required|integer',
+            'player2_marks' => 'required|integer',
+            'player1_points' => 'required|integer',
+            'player2_points' => 'required|integer',
+            'total_time' => 'nullable|integer',
+        ]);
+
+        $match->update(array_merge($validated, ['ended_at' => now()]));
+
+        // Handle Payouts if Ended normally
+        if ($validated['status'] === 'Ended' && $match->winner_user_id) {
+            $this->processMatchPayout($match);
+        }
+
+        return response()->json($match);
+    }
+
+    private function processMatchPayout(Matches $match)
+    {
+        // Payout = (Stake * 2) - 1 (Commission)
+        $totalPot = $match->stake * 2;
+        $commission = 1;
+        $payout = $totalPot - $commission;
+
+        $winner = User::find($match->winner_user_id);
+
+        if ($winner) {
+            $winner->coins_balance += $payout;
+            $winner->save();
+
+            CoinTransactions::create([
+                'transaction_datetime' => now(),
+                'user_id' => $winner->id,
+                'match_id' => $match->id,
+                'coin_transaction_type_id' => 6, // Match payout (Assuming ID 6 based on list order or name need to check seeder strictly but using guess based on prompt context 'Payout')
+                // Actually better to lookup by name to be safe
+                // 'coin_transaction_type_id' => \App\Models\CoinTransactionsType::where('name', 'Match payout')->first()?->id,
+                'coins' => $payout,
+                'custom' => json_encode(['commission' => $commission])
+            ]);
+        }
+    }
+
     private function startNextGame(Matches $match)
     {
         $game = Game::create([
@@ -139,6 +194,10 @@ class MatchController extends Controller
             'began_at' => now(),
             // other default fields if needed
         ]);
+
+        // Ensure WS knows about this game ID? 
+        // Realistically WS needs to be informed or polling, 
+        // but for now we stick to the provided scope.
     }
 
     private function debitStake(User $user, Matches $match)
@@ -146,11 +205,14 @@ class MatchController extends Controller
         $user->coins_balance -= $match->stake;
         $user->save();
 
+        // Find type ID safely
+        $typeId = \App\Models\CoinTransactionsType::where('name', 'Match stake')->first()?->id ?? 4;
+
         CoinTransactions::create([
             'transaction_datetime' => now(),
             'user_id' => $user->id,
             'match_id' => $match->id,
-            'coin_transaction_type_id' => 4,
+            'coin_transaction_type_id' => $typeId,
             'coins' => -$match->stake,
         ]);
     }

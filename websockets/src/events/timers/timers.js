@@ -57,12 +57,18 @@ export function endGame(game, io, extra = {}) {
 }
 
 async function saveGameToDB(game, winner, reason) {
+  // If game was not persisted (e.g. single player or failed start), skip
+  // Actually, we should check if game.id is a Database ID (integer) or string? 
+  // API returns integer ID. "game_..." is string.
+  // If it's a temp ID like "game_123...", we can't PUT.
+  if (String(game.id).startsWith("game_")) {
+    console.log("[GameDB] Skipping save for non-persisted game", game.id);
+    return;
+  }
+
   try {
     const payload = {
-      type: game.variant,
-      status: "Ended", // Bisca games here are always 'Ended' if we reach this point normally
-      player1_user_id: game.players.player1.id,
-      player2_user_id: game.players.player2.id,
+      status: "Ended",
       winner_user_id:
         winner === "player1"
           ? game.players.player1.id
@@ -81,16 +87,14 @@ async function saveGameToDB(game, winner, reason) {
       total_time: game.startTime
         ? Math.round((Date.now() - game.startTime) / 1000)
         : null,
-      // began_at/ended_at ? We don't track start time in memory adequately right now, maybe skip or add later
-      // total_time ...
     };
 
-    console.log("[GameDB] Saving game...", payload);
-    const response = await axios.post(
-      "http://127.0.0.1:8000/api/games",
+    console.log(`[GameDB] Updating game ${game.id}...`, payload);
+    const response = await axios.put(
+      `http://127.0.0.1:8000/api/games/${game.id}`,
       payload
     );
-    console.log("[GameDB] Saved:", response.data.id);
+    console.log("[GameDB] Updated:", response.data.id);
   } catch (error) {
     console.error(
       "[GameDB] Failed to save game:",

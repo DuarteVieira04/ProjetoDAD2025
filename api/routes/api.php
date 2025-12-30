@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // * Matches */
     Route::post('/matches', [MatchController::class, 'create']);
     Route::post('/matches/{match}/join', [MatchController::class, 'join']);
+    Route::put('/matches/{match}', [MatchController::class, 'update']);
 
     Route::get('/statistics/me', [StatisticsController::class, 'getUserStatistics']);
 });

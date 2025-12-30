@@ -35,15 +35,11 @@ export function endMatch(match, io, { winnerKey, reason }) {
 async function saveMatchToDB(match, winnerKey, reason) {
   try {
     const payload = {
-      type: match.variant,
       status: "Ended",
-      player1_user_id: match.players.player1.id,
-      player2_user_id: match.players.player2.id,
       winner_user_id: winnerKey ? match.players[winnerKey].id : null,
       loser_user_id: winnerKey
         ? match.players[winnerKey === "player1" ? "player2" : "player1"].id
         : null,
-      stake: match.stake,
       player1_marks: match.marks.player1,
       player2_marks: match.marks.player2,
       player1_points: match.points.player1,
@@ -52,8 +48,13 @@ async function saveMatchToDB(match, winnerKey, reason) {
         ? Math.round((Date.now() - match.startTime) / 1000)
         : null,
     };
-    await axios.post("http://127.0.0.1:8000/api/matches", payload);
+
+    // We also remove coins/payout logic because we moved it to API controller
+    // But we still need to call API to trigger the logic.
+
+    console.log(`[MatchDB] Updating match ${match.id}...`, payload);
+    await axios.put(`http://127.0.0.1:8000/api/matches/${match.id}`, payload);
   } catch (error) {
-    console.error("[MatchDB] Error:", error);
+    console.error("[MatchDB] Error:", error.response?.data || error.message);
   }
 }

@@ -3,8 +3,28 @@ import { createGame } from "../state/games.js";
 import { startTurnTimer } from "../timers/timers.js";
 import { endMatch } from "../timers/matchTimers.js"; // Assume extracted
 
-export function startGameInMatch(match, io) {
-  const gameId = `game_${Date.now()}`;
+import axios from "axios";
+
+export async function startGameInMatch(match, io) {
+  let gameId;
+
+  try {
+    // Create Game in API
+    const response = await axios.post('http://127.0.0.1:8000/api/games', {
+      type: match.variant,
+      status: 'Playing',
+      player1_user_id: match.players.player1.id,
+      player2_user_id: match.players.player2.id,
+      match_id: match.id
+    });
+    gameId = response.data.id;
+    console.log(`[MatchProgression] Created Game ${gameId} in API`);
+  } catch (e) {
+    console.error("[MatchProgression] Failed to create game in API", e.message);
+    // Fallback to temp ID if API fails? Risks state drift but keeps game running.
+    gameId = `game_${Date.now()}`;
+  }
+
   const game = createGame({
     id: gameId,
     variant: match.variant,
@@ -58,8 +78,8 @@ function sendPrivateData(io, roomId, userId, data) {
 export function handleMatchGameEnd(match, game, io, extra) {
   const winnerPoints =
     game.points[
-      extra.winner ||
-        (game.points.player1 > game.points.player2 ? "player1" : "player2")
+    extra.winner ||
+    (game.points.player1 > game.points.player2 ? "player1" : "player2")
     ];
   let marksAwarded = 0;
   let isDraw = game.points.player1 === game.points.player2;
