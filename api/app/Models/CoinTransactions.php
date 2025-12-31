@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CoinTransactions extends Model
 {
+    public $timestamps = false;
     protected $fillable = [
         'transaction_datetime',
         'user_id',

@@ -72,6 +72,20 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
+  const joinMatch = (id) => {
+    return new Promise((resolve, reject) => {
+      emit('joinMatch', { matchId: id }, (res) => {
+        if (res.success) {
+          gameId.value = id // Use gameId ref to track the current "room" ID
+          status.value = 'negotiating'
+          resolve()
+        } else {
+          reject(res.error)
+        }
+      })
+    })
+  }
+
   const resign = () => {
     if (!gameId.value) return
     emit('resign', { gameId: gameId.value }, (res) => {
@@ -216,6 +230,7 @@ export const useGameStore = defineStore('game', () => {
     playCard,
     createGame,
     joinGame,
+    joinMatch,
     resign,
   }
 })

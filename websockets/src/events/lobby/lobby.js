@@ -1,4 +1,5 @@
 import { getOpenGames } from "../../state/games.js";
+import { emitOpenMatches } from "./match-lobby.js";
 
 export function emitOpenGames(io) {
   const games = getOpenGames().map((g) => ({
@@ -13,4 +14,5 @@ export function emitOpenGames(io) {
 export function joinLobby(io, socket) {
   socket.join("lobby");
   emitOpenGames(io);
+  emitOpenMatches(io);
 }

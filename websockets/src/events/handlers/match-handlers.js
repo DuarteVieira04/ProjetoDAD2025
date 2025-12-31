@@ -1,26 +1,24 @@
 // handlers/matchHandlers.js
-import { createMatch, getMatch } from "../state/matches.js";
-import { emitOpenMatches } from "../lobby/matchLobby.js";
-import { startGameInMatch, startMatch } from "../gameplay/matchProgression.js";
-import { deductCoins, logTransaction } from "../../utils/coinUtils.js";
+import { createMatch, getMatch } from "../../state/matches.js";
+import { emitOpenMatches } from "../lobby/match-lobby.js";
+import { startGameInMatch } from "../gameplay/match-progression.js";
 
 export function createMatchHandler(
   io,
   socket,
   user,
-  { variant = "9", initialStake = 3 },
+  { matchId, variant, stake },
   callback
 ) {
-  if (initialStake < 3 || initialStake > 100)
-    return callback?.({ error: "Invalid stake" });
-  if (user.coins_balance < initialStake)
-    return callback?.({ error: "Insufficient coins" });
+  // Logic: API has already created the match and deducted coins.
+  // We just initialize the socket state.
 
-  const matchId = `match_${Date.now()}`;
+  if (!matchId) return callback?.({ error: "Missing matchId from API" });
+
   const match = createMatch({
     id: matchId,
-    variant,
-    stake: initialStake,
+    variant: variant || "9",
+    stake: stake || 3,
     creator: { id: user.id, nickname: user.nickname },
   });
 
@@ -133,22 +131,8 @@ function startStakeNegotiationTimer(match, io) {
 function startMatch(match, io) {
   if (match.negotiationTimer) clearTimeout(match.negotiationTimer);
 
-  deductCoins(match.players.player1.id, match.stake);
-  deductCoins(match.players.player2.id, match.stake);
-  logTransaction(
-    match.players.player1.id,
-    null,
-    match.id,
-    "Match stake",
-    -match.stake
-  );
-  logTransaction(
-    match.players.player2.id,
-    null,
-    match.id,
-    "Match stake",
-    -match.stake
-  );
+  // Coins were deducted by API upon creation/join.
+  // We don't deduct here again.
 
   match.startTime = Date.now();
   match.status = "playing";

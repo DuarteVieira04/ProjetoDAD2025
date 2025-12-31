@@ -1,9 +1,11 @@
 // gameplay/matchProgression.js
-import { createGame } from "../state/games.js";
+import { createGame } from "../../state/games.js";
 import { startTurnTimer } from "../timers/timers.js";
-import { endMatch } from "../timers/match-timers.js"; // Assume extracted
+import { endMatch } from "../timers/match-timers.js";
 
 import axios from "axios";
+
+console.log("[MatchProgression] Loaded w/ corrected paths");
 
 export async function startGameInMatch(match, io) {
   let gameId;
@@ -21,7 +23,6 @@ export async function startGameInMatch(match, io) {
     console.log(`[MatchProgression] Created Game ${gameId} in API`);
   } catch (e) {
     console.error("[MatchProgression] Failed to create game in API", e.message);
-    // Fallback to temp ID if API fails? Risks state drift but keeps game running.
     gameId = `game_${Date.now()}`;
   }
 
@@ -68,7 +69,7 @@ function sendPrivateData(io, roomId, userId, data) {
   if (roomSockets) {
     for (const socketId of roomSockets) {
       const s = io.sockets.sockets.get(socketId);
-      if (s && s.handshake.auth.id === userId) {
+      if (s && String(s.handshake.auth.id) === String(userId)) {
         s.emit("gameStartedPrivate", data);
       }
     }

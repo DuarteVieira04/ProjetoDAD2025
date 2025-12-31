@@ -1,5 +1,11 @@
 import { joinLobby } from "./lobby/lobby.js";
 import { createGameHandler, joinGameHandler, resignHandler } from "./handlers/game.js";
+import {
+  createMatchHandler,
+  joinMatchHandler,
+  proposeStakeHandler,
+  acceptStakeHandler
+} from "./handlers/match-handlers.js";
 import { playCardHandler } from "./gameplay/gameplay.js";
 import { handleDisconnect, handleReconnect } from "./reconnection.js";
 
@@ -27,6 +33,21 @@ export function handleConnectionEvents(io, socket) {
   socket.on("resign", ({ gameId }, callback) =>
     resignHandler(io, socket, user, gameId, callback)
   );
+
+  // Match Events
+  socket.on("createMatch", (data, callback) =>
+    createMatchHandler(io, socket, user, data, callback)
+  );
+  socket.on("joinMatch", (data, callback) =>
+    joinMatchHandler(io, socket, user, data.matchId, callback)
+  );
+  socket.on("proposeStake", (data, callback) =>
+    proposeStakeHandler(io, socket, user, data, callback)
+  );
+  socket.on("acceptStake", (data, callback) =>
+    acceptStakeHandler(io, socket, user, data, callback)
+  );
+
   socket.on("disconnect", () => handleDisconnect(io, socket));
 
   handleReconnect(io, socket);

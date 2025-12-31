@@ -244,15 +244,17 @@ onMounted(() => {
     game.gameId = gameId
   }
 
-  // Try to join the game.
-  // If we are the creator (Player 1), this will fail with "Cannot join your own game",
-  // which is fine because the reconnection logic (server-side) handles re-joining the room.
-  game.joinGame(gameId).catch((err) => {
+  const joinAction = route.query.type === 'match' ? game.joinMatch : game.joinGame
+  
+  joinAction(gameId).catch((err) => {
     if (err && err.includes && err.includes('Cannot join your own game')) {
-      console.log('User is creator, handled by reconnection logic')
+      // For matches, this error might be "Match full" or specific logic
+      // But typically creators join immediately via 'createMatch' return in some flows.
+      // Here we explicitly join.
+      console.log('User is creator/in-game, handled by reconnection logic')
     } else {
-      console.error('Failed to join game:', err)
-      alert('Failed to join game: ' + err)
+      console.error('Failed to join:', err)
+      alert('Failed to join: ' + err)
     }
   })
 })

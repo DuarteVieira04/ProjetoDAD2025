@@ -24,12 +24,13 @@ export function createMatch(data) {
     proposer: null,
     negotiationTimer: null,
   };
+  match.id = String(match.id);
   matches.set(match.id, match);
   return match;
 }
 
 export function getMatch(id) {
-  return matches.get(id);
+  return matches.get(String(id));
 }
 
 export function getOpenMatches() {
@@ -39,5 +40,5 @@ export function getOpenMatches() {
 }
 
 export function deleteMatch(id) {
-  matches.delete(id);
+  matches.delete(String(id));
 }

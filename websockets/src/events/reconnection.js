@@ -38,7 +38,7 @@ export function handleReconnect(io, socket) {
             ? game.hands.player2?.length ?? 0
             : game.hands.player1.length,
         trumpSuit: game.trumpSuit,
-        trumpCardFilename: game.trumpCard.filename,
+        trumpCardFilename: game.trumpCard?.filename,
         stockSize: game.stock.length + 1,
         youAre: role,
         firstTurn: game.turn,

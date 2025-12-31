@@ -3,17 +3,28 @@ import { computed, inject, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { useAuthStore } from '@/stores/auth'
+import { useLobbyStore } from '@/stores/lobby'
 import Button from '@/components/ui/button/Button.vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Lock } from 'lucide-vue-next'
 
 const game = useGameStore()
+const lobbyStore = useLobbyStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const socket = inject('socket')
 
 const isCreating = ref(false)
+const matchStake = ref(3)
 
 const userCoins = reactive({ value: 0 })
 
@@ -64,6 +75,17 @@ const createNewGame = async (variant = '9') => {
     console.error('Create game failed:', err)
     alert('Failed to create game')
     isCreating.value = false
+  }
+}
+
+const handleCreateMatch = async (variant) => {
+  try {
+    const res = await lobbyStore.createMatch(variant, matchStake.value)
+    if (res.matchId) {
+      router.push({ name: 'game', params: { id: res.matchId }, query: { type: 'match' } })
+    }
+  } catch (e) {
+    alert('Failed to create match: ' + e)
   }
 }
 
@@ -156,6 +178,43 @@ const goToLogin = () => {
             >
               Start Bisca de 3 (PvP)
             </Button>
+
+            <Dialog>
+              <DialogTrigger as-child>
+                <Button 
+                  class="w-full h-10 text-sm bg-black hover:bg-zinc-800 text-white"
+                  :disabled="isCreating"
+                >
+                  Create Match (Stake)
+                </Button>
+              </DialogTrigger>
+              <DialogContent class="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create Match (4 Marks)</DialogTitle>
+                  <DialogDescription> Set the stake and choose the variant. </DialogDescription>
+                </DialogHeader>
+                <div class="gap-4 grid py-4">
+                  <div class="flex flex-col gap-2">
+                    <label class="font-medium text-sm">Stake (Coins)</label>
+                    <input
+                      v-model="matchStake"
+                      type="number"
+                      min="3"
+                      max="100"
+                      class="px-3 py-2 border rounded-md"
+                    />
+                    <p class="text-[0.8rem] text-muted-foreground">Min: 3, Max: 100</p>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 mt-2">
+                    <Button @click="handleCreateMatch('9')" class="w-full" size="lg"> Bisca 9 </Button>
+                    <Button @click="handleCreateMatch('3')" class="w-full" variant="outline" size="lg">
+                      Bisca 3
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             
             <div class="relative py-2">
                 <div class="absolute inset-0 flex items-center">

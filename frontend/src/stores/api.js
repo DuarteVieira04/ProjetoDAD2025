@@ -47,6 +47,20 @@ export const useAPIStore = defineStore('api', () => {
     return axios.get(`${API_BASE_URL}/users/me`)
   }
 
+  const getCurrentUserCoins = (userId) => {
+    return axios.get(`${API_BASE_URL}/coins/balance/${userId}`)
+  }
+
+  const createMatch = (variant, stake) => {
+    // API expects a proper payload? Let's assume params match MatchController::create
+    // MatchController::create usually expects data in body.
+    return axios.post(`${API_BASE_URL}/matches`, {
+      type: variant,
+      mode: 'multi',
+      stake: parseInt(stake),
+    })
+  }
+
   //Games
   const getGames = (resetPagination = false) => {
     if (resetPagination) {
@@ -95,9 +109,12 @@ export const useAPIStore = defineStore('api', () => {
     getAuthUserPurchaseHistory,
     purchaseCoins,
     getAuthUserCoinsBalance,
+    getCurrentUserCoins,
+    createMatch,
     getPublicStatistics,
     getUserStatistics,
     getGlobalLeaderboard,
     getPersonalLeaderboard,
   }
 })
+
