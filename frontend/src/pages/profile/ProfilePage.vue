@@ -27,25 +27,18 @@
         <p class="text-destructive">{{ profileStore.error }}</p>
       </CardContent>
 
-      <!-- Profile Content -->
       <CardContent v-else-if="profileStore.displayedUser" class="space-y-8">
         <div class="space-y-8">
-          <!-- Avatar + Basic Info -->
           <div class="flex sm:flex-row flex-col items-start sm:items-center gap-6">
             <div class="group relative">
               <Avatar
                 class="shadow-lg ring-4 ring-background group-hover:ring-primary/20 w-32 h-32 transition-all duration-200 cursor-pointer"
                 @click="triggerFileInput"
               >
-                <!-- Correct: use preview or real URL -->
-                <AvatarImage
-                  :src="profileStore.previewUrl || profileStore.displayedUser.avatar_url"
-                  alt="User avatar"
-                />
+                <AvatarImage :src="profileStore.previewUrl" alt="User avatar" />
                 <AvatarFallback class="text-3xl">{{ profileStore.initials }}</AvatarFallback>
               </Avatar>
 
-              <!-- Hover Overlay (own profile only) -->
               <div
                 v-if="!profileStore.isViewingAnotherUserAsAdmin"
                 class="absolute inset-0 flex flex-col justify-center items-center bg-black/50 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-200"
@@ -127,7 +120,7 @@
 
           <!-- Actions -->
           <div class="flex sm:flex-row flex-col gap-4 pt-6 border-t">
-            <!-- Logout only for own profile -->
+            <!-- Logout (only own profile) -->
             <Button
               v-if="!profileStore.isViewingAnotherUserAsAdmin"
               @click="logout"
@@ -136,93 +129,193 @@
               Logout
             </Button>
 
-          <!-- Admin Actions -->
-          <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="flex-1">
-            <p class="mb-3 font-medium">Admin Actions</p>
-            <Button
-              @click="profileStore.toggleBlockUser(!profileStore.displayedUser.blocked)"
-              :variant="profileStore.displayedUser.blocked ? 'default' : 'destructive'"
-            >
-              {{ profileStore.displayedUser.blocked ? 'Unblock User' : 'Block User' }}
-            </Button>
-          </div>
-        </div>
+            <!-- Admin viewing another user's profile -->
+            <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="flex-1 space-y-4">
+              <p class="font-medium">Admin Actions</p>
+              <div class="flex flex-wrap gap-3">
+                <Button
+                  @click="profileStore.toggleBlockUser(!profileStore.displayedUser.blocked)"
+                  :variant="profileStore.displayedUser.blocked ? 'default' : 'destructive'"
+                >
+                  {{ profileStore.displayedUser.blocked ? 'Unblock User' : 'Block User' }}
+                </Button>
 
-        <!-- Coin Transaction History (Admin Only) -->
-        <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="pt-6 border-t space-y-4">
-          <h3 class="font-semibold text-lg">Coin Transaction History</h3>
-          
-          <!-- Filters -->
-          <div class="space-y-3">
-            <label class="block font-semibold text-sm">Filter by Type</label>
-            <div class="flex flex-wrap gap-2">
-              <button
-                @click="selectedType = null"
-                :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                  selectedType === null 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted hover:bg-muted/80'
-                ]"
+                <!-- Admin Delete Button - Only for Players -->
+                <AlertDialog>
+                  <AlertDialogTrigger as-child>
+                    <Button
+                      variant="destructive"
+                      :disabled="profileStore.displayedUser.type === 'A'"
+                    >
+                      Delete User Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Permanently delete this account?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. All data for
+                        <strong>{{ profileStore.displayedUser.name }}</strong>
+                        (ID: {{ profileStore.displayedUser.id }}) will be permanently removed,
+                        including coins, history, and profile.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        @click="handleAdminDelete"
+                        class="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                        :disabled="deleting"
+                      >
+                        <span v-if="deleting">Deleting...</span>
+                        <span v-else>Delete User</span>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
+              <p
+                v-if="profileStore.displayedUser.type === 'A'"
+                class="mt-2 text-muted-foreground text-sm"
               >
-                All Transactions
-              </button>
-              <button
-                v-for="type in availableTypes"
-                :key="type"
-                @click="selectedType = type"
-                :class="[
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                  selectedType === type 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-muted hover:bg-muted/80'
-                ]"
-              >
-                {{ type }}
-              </button>
+                Admin accounts cannot be deleted by other admins.
+              </p>
+            </div>
+
+            <!-- Own Profile: Self Delete with Password -->
+            <div v-else class="space-y-4">
+              <p class="font-medium text-destructive">Destructive Actions</p>
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <Button variant="destructive">Delete Account</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your account and
+                      all associated data (coins, history, etc.).
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <div class="space-y-4 py-4">
+                    <div class="space-y-2">
+                      <Label for="password">Please enter your password to confirm</Label>
+                      <Input
+                        id="password"
+                        v-model="deletePassword"
+                        type="password"
+                        placeholder="Your password"
+                        :disabled="deleting"
+                      />
+                    </div>
+                    <p v-if="passwordError" class="text-destructive text-sm">
+                      {{ passwordError }}
+                    </p>
+                  </div>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel :disabled="deleting">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      @click="handleSelfDelete"
+                      class="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      :disabled="deleting || !deletePassword"
+                    >
+                      <span v-if="deleting">Deleting...</span>
+                      <span v-else>Delete My Account</span>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
-          <!-- Table -->
-          <div v-if="transactionsLoading" class="flex justify-center items-center py-8">
-            <p class="text-muted-foreground">Loading transactions...</p>
-          </div>
+          <!-- Coin Transaction History (Admin Only) -->
+          <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="space-y-4 pt-6 border-t">
+            <h3 class="font-semibold text-lg">Coin Transaction History</h3>
 
-          <div v-else-if="!filteredTransactions || filteredTransactions.length === 0" class="py-8 text-center">
-            <p class="text-muted-foreground">No transactions found.</p>
-          </div>
-
-          <div v-else class="overflow-x-auto">
-            <table class="w-full border-collapse text-sm">
-              <thead>
-                <tr class="border-b">
-                  <th class="px-4 py-3 text-left font-semibold">Date</th>
-                  <th class="px-4 py-3 text-left font-semibold">Transaction Type</th>
-                  <th class="px-4 py-3 text-left font-semibold">Coins</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="transaction in filteredTransactions" 
-                  :key="transaction.id" 
-                  class="border-b hover:bg-muted/50 transition-colors"
+            <!-- Filters -->
+            <div class="space-y-3">
+              <label class="block font-semibold text-sm">Filter by Type</label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  @click="selectedType = null"
+                  :class="[
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    selectedType === null
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted hover:bg-muted/80',
+                  ]"
                 >
-                  <td class="px-4 py-3">{{ formatTransactionDate(transaction.transaction_datetime) }}</td>
-                  <td class="px-4 py-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      {{ transaction.type?.name || 'Unknown' }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3">
-                    <span :class="transaction.coins > 0 ? 'text-green-600' : 'text-red-600'" class="font-semibold">
-                      {{ transaction.coins > 0 ? '+' : '' }}{{ transaction.coins }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  All Transactions
+                </button>
+                <button
+                  v-for="type in availableTypes"
+                  :key="type"
+                  @click="selectedType = type"
+                  :class="[
+                    'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                    selectedType === type
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted hover:bg-muted/80',
+                  ]"
+                >
+                  {{ type }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div v-if="transactionsLoading" class="flex justify-center items-center py-8">
+              <p class="text-muted-foreground">Loading transactions...</p>
+            </div>
+
+            <div
+              v-else-if="!filteredTransactions || filteredTransactions.length === 0"
+              class="py-8 text-center"
+            >
+              <p class="text-muted-foreground">No transactions found.</p>
+            </div>
+
+            <div v-else class="overflow-x-auto">
+              <table class="w-full text-sm border-collapse">
+                <thead>
+                  <tr class="border-b">
+                    <th class="px-4 py-3 font-semibold text-left">Date</th>
+                    <th class="px-4 py-3 font-semibold text-left">Transaction Type</th>
+                    <th class="px-4 py-3 font-semibold text-left">Coins</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="transaction in filteredTransactions"
+                    :key="transaction.id"
+                    class="hover:bg-muted/50 border-b transition-colors"
+                  >
+                    <td class="px-4 py-3">
+                      {{ formatTransactionDate(transaction.transaction_datetime) }}
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        class="inline-flex items-center bg-primary/10 px-2.5 py-0.5 rounded-full font-medium text-primary text-xs"
+                      >
+                        {{ transaction.type?.name || 'Unknown' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3">
+                      <span
+                        :class="transaction.coins > 0 ? 'text-green-600' : 'text-red-600'"
+                        class="font-semibold"
+                      >
+                        {{ transaction.coins > 0 ? '+' : '' }}{{ transaction.coins }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </div>
       </CardContent>
 
@@ -235,29 +328,96 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
 import { useTransactionsStore } from '@/stores/transactions'
+import { useAPIStore } from '@/stores/api'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+import { useAdminStore } from '@/stores/admin'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const adminStore = useAdminStore()
 const profileStore = useProfileStore()
 const transactionsStore = useTransactionsStore()
+const apiStore = useAPIStore()
 
 const fileInput = ref(null)
 const userTransactions = ref([])
 const transactionsLoading = ref(false)
 const selectedType = ref(null)
 
+// Delete modal state
+const deletePassword = ref('')
+const passwordError = ref('')
+const deleting = ref(false)
+
 const logout = () => {
   authStore.logout()
   router.push('/login')
+}
+
+// Self-delete (regular user or admin deleting own account)
+const handleSelfDelete = async () => {
+  if (!deletePassword.value) return
+
+  deleting.value = true
+  passwordError.value = ''
+
+  try {
+    // Validate password by attempting login
+    const credentials = {
+      email: profileStore.displayedUser.email,
+      password: deletePassword.value,
+    }
+    await apiStore.postLogin(credentials)
+
+    // If login succeeds → password is correct → delete own account
+    await authStore.deleteUser()
+
+    // Full logout and redirect
+    authStore.logout()
+    router.push('/')
+  } catch (_err) {
+    passwordError.value = 'Incorrect password. Please try again.'
+    deletePassword.value = ''
+  } finally {
+    deleting.value = false
+  }
+}
+
+// Admin deleting a player account
+const handleAdminDelete = async () => {
+  if (profileStore.displayedUser.type === 'A') return
+
+  deleting.value = true
+  try {
+    await adminStore.deleteUser(profileStore.displayedUser.id)
+    router.push('/admin/users') // Adjust to your actual admin users route
+  } catch (err) {
+    console.error('Failed to delete user:', err)
+    // Optionally show toast/error message
+  } finally {
+    deleting.value = false
+  }
 }
 
 const formatDate = (dateString) => {
@@ -276,13 +436,13 @@ const formatTransactionDate = (dateString) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(date)
 }
 
 const availableTypes = computed(() => {
   const types = new Set()
-  userTransactions.value.forEach(t => {
+  userTransactions.value.forEach((t) => {
     if (t.type?.name) {
       types.add(t.type.name)
     }
@@ -294,7 +454,7 @@ const filteredTransactions = computed(() => {
   if (!selectedType.value) {
     return userTransactions.value
   }
-  return userTransactions.value.filter(t => t.type?.name === selectedType.value)
+  return userTransactions.value.filter((t) => t.type?.name === selectedType.value)
 })
 
 const triggerFileInput = () => {
