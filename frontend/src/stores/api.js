@@ -78,6 +78,10 @@ export const useAPIStore = defineStore('api', () => {
   const getPublicStatistics = () => axios.get(`${API_BASE_URL}/statistics/public`)
   const getUserStatistics = () => axios.get(`${API_BASE_URL}/statistics/me`)
 
+  // Leaderboards
+  const getGlobalLeaderboard = (limit = 50) => axios.get(`${API_BASE_URL}/leaderboards/global`, { params: { limit } })
+  const getPersonalLeaderboard = (params = {}) => axios.get(`${API_BASE_URL}/leaderboards/personal`, { params })
+
   return {
     token,
     getToken,
@@ -93,5 +97,7 @@ export const useAPIStore = defineStore('api', () => {
     getAuthUserCoinsBalance,
     getPublicStatistics,
     getUserStatistics,
+    getGlobalLeaderboard,
+    getPersonalLeaderboard,
   }
 })

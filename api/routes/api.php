@@ -16,6 +16,9 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 
 Route::get('/statistics/public', [StatisticsController::class, 'getPublicStatistics']);
 
+// Leaderboards
+Route::get('/leaderboards/global', [StatisticsController::class, 'getGlobalLeaderboard']);
+
 Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
     // ! Admin Routes
     Route::get('/admin/users', [AdminUserController::class, 'getUsers']);
@@ -60,6 +63,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/matches/{match}', [MatchController::class, 'update']);
 
     Route::get('/statistics/me', [StatisticsController::class, 'getUserStatistics']);
+    
+    // Personal leaderboard (authenticated)
+    Route::get('/leaderboards/personal', [StatisticsController::class, 'getPersonalLeaderboard']);
 });
 
 Route::get('/matches', [MatchController::class, 'list']);

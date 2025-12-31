@@ -2,7 +2,7 @@
   <div>
     <NavigationMenu class="hidden md:flex w-full">
       <div class="flex justify-end items-center px-4 md:px-8 w-full h-16">
-        <NavigationMenuList class="flex items-center gap-8">
+        <NavigationMenuList class="flex items-center gap-6">
           <NavigationMenuItem>
             <NavigationMenuTrigger>Testing</NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -33,8 +33,22 @@
             </NavigationMenuLink>
           </NavigationMenuItem>
 
-          <NavigationMenuItem v-if="userLoggedIn">
-            <NavigationMenuLink as-child> </NavigationMenuLink>
+          <NavigationMenuItem>
+            <NavigationMenuTrigger>Leaderboards</NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <ul class="gap-3 grid p-4 w-auto min-w-max">
+                <li>
+                  <NavigationMenuLink as-child>
+                    <RouterLink to="/leaderboards/global">Global Leaderboard</RouterLink>
+                  </NavigationMenuLink>
+                </li>
+                <li v-if="userLoggedIn">
+                  <NavigationMenuLink as-child>
+                    <RouterLink to="/leaderboards/personal">My Leaderboard</RouterLink>
+                  </NavigationMenuLink>
+                </li>
+              </ul>
+            </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem v-if="userLoggedIn">

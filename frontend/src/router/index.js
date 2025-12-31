@@ -13,6 +13,8 @@ import GameView from '@/pages/game/GameView.vue'
 import LobbyPage from '@/pages/lobby/LobbyPage.vue'
 import ViewMatches from '@/pages/matches/ViewMatches.vue'
 import StatisticsPage from '@/pages/statistics/StatisticsPage.vue'
+import GlobalLeaderboard from '@/pages/leaderboards/GlobalLeaderboard.vue'
+import PersonalLeaderboard from '@/pages/leaderboards/PersonalLeaderboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -73,8 +75,19 @@ const router = createRouter({
     },
     {
       path: '/statistics',
-      name: 'shop',
+      name: 'statistics',
       component: StatisticsPage,
+    },
+    {
+      path: '/leaderboards/global',
+      name: 'global-leaderboard',
+      component: GlobalLeaderboard,
+    },
+    {
+      path: '/leaderboards/personal',
+      name: 'personal-leaderboard',
+      component: PersonalLeaderboard,
+      meta: { requiresAuth: true },
     },
     {
       path: '/testing',
