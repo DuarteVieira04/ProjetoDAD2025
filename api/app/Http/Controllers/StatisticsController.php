@@ -23,6 +23,7 @@ class StatisticsController extends Controller
         ]);
     }
 
+
     /**
      * User Statistics
      */

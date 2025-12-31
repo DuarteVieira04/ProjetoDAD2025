@@ -1,7 +1,7 @@
 // timers/matchTimers.js
-import { deleteMatch } from "../state/matches.js";
-import { emitOpenMatches } from "../lobby/matchLobby.js";
-import { creditCoins, logTransaction } from "../utils/coinUtils.js";
+import { deleteMatch } from "../../state/matches.js";
+import { emitOpenMatches } from "../lobby/match-lobby.js";
+
 import axios from "axios";
 
 export function endMatch(match, io, { winnerKey, reason }) {
@@ -12,8 +12,6 @@ export function endMatch(match, io, { winnerKey, reason }) {
   const payout = totalStake - 1;
   const winnerId = match.players[winnerKey].id;
 
-  creditCoins(winnerId, payout);
-  logTransaction(winnerId, null, match.id, "Match payout", payout);
 
   io.to(match.id).emit("matchEnded", {
     winner: winnerKey,

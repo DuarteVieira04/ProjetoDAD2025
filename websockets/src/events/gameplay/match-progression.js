@@ -1,7 +1,7 @@
 // gameplay/matchProgression.js
 import { createGame } from "../state/games.js";
 import { startTurnTimer } from "../timers/timers.js";
-import { endMatch } from "../timers/matchTimers.js"; // Assume extracted
+import { endMatch } from "../timers/match-timers.js"; // Assume extracted
 
 import axios from "axios";
 

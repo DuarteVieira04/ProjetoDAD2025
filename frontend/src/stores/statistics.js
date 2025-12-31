@@ -24,6 +24,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   }
 
+
   const fetchUserStatistics = async () => {
     loading.value = true
     error.value = ''

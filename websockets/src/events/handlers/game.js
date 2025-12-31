@@ -4,7 +4,7 @@ import { awardRemainingCardsToWinner, triggerBotMove } from "../gameplay/gamepla
 import { emitOpenGames } from "../lobby/lobby.js";
 
 import { getMatch } from "../../state/matches.js";
-import { endMatch } from "../timers/matchTimers.js";
+import { endMatch } from "../timers/match-timers.js";
 
 export function resignHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);

@@ -1,4 +1,4 @@
-import { getOpenMatches } from "../state/matches.js";
+import { getOpenMatches } from "../../state/matches.js";
 
 export function emitOpenMatches(io) {
   const matches = getOpenMatches().map((m) => ({
