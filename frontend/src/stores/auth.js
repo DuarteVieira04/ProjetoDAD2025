@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, inject } from 'vue'
 import { useAPIStore } from './api'
 import router from '@/router'
+import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
   const API_BASE_URL = inject('apiBaseURL')
@@ -65,6 +66,10 @@ export const useAuthStore = defineStore('auth', () => {
     socket.connect()
   }
 
+  const deleteUser = async () => {
+    await axios.delete(`${API_BASE_URL}/users/me/delete`)
+  }
+
   return {
     currentUser,
     userCoins,
@@ -74,5 +79,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     fetchUserCoins,
+    deleteUser,
   }
 })

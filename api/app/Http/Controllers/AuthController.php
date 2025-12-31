@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CoinTransactions;
+use App\Models\Game;
+use App\Models\Matches;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -111,6 +114,48 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out successfully',
+        ]);
+    }
+
+    public function delete(Request $request)
+    {
+        $user = $request->user();
+
+        // Check if user has any history in games, matches, or coin transactions
+        $hasHistory =
+            Game::where('player1_user_id', $user->id)
+                ->orWhere('player2_user_id', $user->id)
+                ->orWhere('winner_user_id', $user->id)
+                ->orWhere('loser_user_id', $user->id)
+                ->exists() ||
+            Matches::where('player1_user_id', $user->id)
+                ->orWhere('player2_user_id', $user->id)
+                ->orWhere('winner_user_id', $user->id)
+                ->orWhere('loser_user_id', $user->id)
+                ->exists() ||
+            CoinTransactions::where('user_id', $user->id)
+                ->orWhere('from_user_id', $user->id)
+                ->orWhere('to_user_id', $user->id)
+                ->exists();
+
+        if ($hasHistory) {
+            $user->delete();
+
+            User::withTrashed()->where('id', $user->id)->update([
+                'name' => 'Deleted User',
+                'nickname' => 'deleted_user_' . $user->id,
+                'email' => 'deleted_' . $user->id . '@deleted.example.com',
+                'phone' => null,
+                'avatar' => null,
+            ]);
+        } else {
+            $user->forceDelete();
+        }
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Your account has been successfully deleted.'
         ]);
     }
 }

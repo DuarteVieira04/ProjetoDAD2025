@@ -46,6 +46,10 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  const deleteUser = async (userId) => {
+    await axios.delete(`${API_BASE_URL}/admin/user/${userId}`)
+  }
+
   const getUserDetails = async (userID) => {
     const response = await axios.get(`${API_BASE_URL}/admin/user/${userID}`)
     const user = response.data
@@ -72,6 +76,7 @@ export const useAdminStore = defineStore('admin', () => {
     getUserDetails,
     setUserBlocked,
     getStats,
+    deleteUser,
     userListQueryParams,
   }
 })

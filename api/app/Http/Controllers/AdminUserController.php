@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CoinTransactions;
+use App\Models\Game;
+use App\Models\Matches;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -97,5 +100,53 @@ class AdminUserController extends Controller
         $user->save();
 
         return response()->json($user, 200);
+    }
+
+    public function destroy(User $user, Request $request)
+    {
+        $admin = $request->user();
+
+        // Prevent admin from deleting their own account
+        if ($admin->id === $user->id) {
+            return response()->json([
+                'error' => 'You cannot delete your own account.'
+            ], 403);
+        }
+
+        $hasHistory =
+            Game::where('player1_user_id', $user->id)
+                ->orWhere('player2_user_id', $user->id)
+                ->orWhere('winner_user_id', $user->id)
+                ->orWhere('loser_user_id', $user->id)
+                ->exists() ||
+            Matches::where('player1_user_id', $user->id)
+                ->orWhere('player2_user_id', $user->id)
+                ->orWhere('winner_user_id', $user->id)
+                ->orWhere('loser_user_id', $user->id)
+                ->exists() ||
+            CoinTransactions::where('user_id', $user->id)
+                ->orWhere('from_user_id', $user->id)
+                ->orWhere('to_user_id', $user->id)
+                ->exists();
+
+        if ($hasHistory) {
+            $user->delete();
+
+            User::withTrashed()->where('id', $user->id)->update([
+                'name' => 'Deleted User',
+                'nickname' => 'deleted_user_' . $user->id,
+                'email' => 'deleted_' . $user->id . '@deleted.example.com',
+                'phone' => null,
+                'avatar' => null,
+            ]);
+        } else {
+            $user->forceDelete();
+        }
+
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => "User '{$user->name}' (ID: {$user->id}) has been deleted."
+        ]);
     }
 }
