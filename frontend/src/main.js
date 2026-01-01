@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { io } from 'socket.io-client'
 import { useAuthStore } from '@/stores/auth'
+import { useAPIStore } from '@/stores/api'
 import App from './App.vue'
 import router from './router'
 
@@ -22,8 +23,10 @@ const socket = io(wsConnection, {
   reconnectionAttempts: 10,
   auth: (cb) => {
     const authStore = useAuthStore()
+    const apiStore = useAPIStore()
     const user = authStore.currentUser
-    cb(user)
+    const token = apiStore.token
+    cb({ token, ...user })
   },
 })
 

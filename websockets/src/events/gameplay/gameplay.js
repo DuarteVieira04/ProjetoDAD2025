@@ -233,7 +233,7 @@ export function awardRemainingCardsToWinner(game, winnerKey) {
   game.stock.length = 0;
 
   if (game.trump) {
-    totalPoints += getCardValue(game.trumpCard.rank);
+    totalPoints += getCardValue(game.trump.rank); // Fixed: game.trump, not game.trumpCard
     game.trump = null;
   }
 

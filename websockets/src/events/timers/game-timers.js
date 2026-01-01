@@ -33,7 +33,7 @@ export function startTurnTimer(game, io) {
   });
 }
 
-export function endGame(game, io, extra = {}) {
+export async function endGame(game, io, extra = {}) {
   if (game.timer) {
     clearTimeout(game.timer);
     game.timer = null;
@@ -52,6 +52,9 @@ export function endGame(game, io, extra = {}) {
     `[GameTimer] Ending single game ${game.id} — winner: ${winner || "draw"}`
   );
 
+  // Save to DB FIRST (triggers coin update)
+  await saveGameToDB(game, winner, extra.reason);
+
   io.to(roomId).emit("gameEnded", {
     winner,
     reason: extra.reason || (winner ? "normal" : "draw"),
@@ -59,7 +62,7 @@ export function endGame(game, io, extra = {}) {
     ...extra,
   });
 
-  saveGameToDB(game, winner, extra.reason);
+
 
   game.status = GAME_STATUS.ENDED;
 
@@ -82,14 +85,14 @@ async function saveGameToDB(game, winner, reason) {
         winner === "player1"
           ? game.players.player1?.id
           : winner === "player2"
-          ? game.players.player2?.id
-          : null,
+            ? game.players.player2?.id
+            : null,
       loser_user_id:
         winner === "player1"
           ? game.players.player2?.id
           : winner === "player2"
-          ? game.players.player1?.id
-          : null,
+            ? game.players.player1?.id
+            : null,
       player1_points: game.points.player1,
       player2_points: game.points.player2,
       is_draw: !winner,

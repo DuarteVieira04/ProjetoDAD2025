@@ -1,6 +1,7 @@
 // src/stores/useGameStore.js
 import { ref, inject, computed } from 'vue'
 import { defineStore } from 'pinia'
+import { useAuthStore } from './auth'
 
 export const useGameStore = defineStore('game', () => {
   const socket = inject('socket')
@@ -318,6 +319,10 @@ export const useGameStore = defineStore('game', () => {
     stopTimer()
     status.value = 'ended'
     gameOverData.value = { winner, points, reason }
+
+    // Refresh coins
+    const authStore = useAuthStore()
+    authStore.fetchUserCoins()
   })
 
   on('matchEnded', ({ winner, finalMarks, reason }) => {
@@ -337,6 +342,10 @@ export const useGameStore = defineStore('game', () => {
             : finalMarks[winner],
       }
     }
+
+    // Refresh coins
+    const authStore = useAuthStore()
+    authStore.fetchUserCoins()
   })
 
   on('invalidMove', ({ reason }) => {
