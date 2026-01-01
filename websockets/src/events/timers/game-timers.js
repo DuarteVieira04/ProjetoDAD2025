@@ -1,13 +1,11 @@
-// src/timers/timers.js
+// src/timers/game-timers.js
+
 import { deleteGame } from "../../state/games.js";
 import { TIMER_SECONDS, GAME_STATUS } from "../../constants/index.js";
 import { emitOpenGames } from "../lobby/lobby.js";
 import axios from "axios";
 
-import {
-  executeMove,
-  awardRemainingCardsToWinner,
-} from "../gameplay/gameplay.js";
+import { awardRemainingCardsToWinner } from "../gameplay/gameplay.js";
 
 export function startTurnTimer(game, io) {
   if (game.timer) {
@@ -15,17 +13,13 @@ export function startTurnTimer(game, io) {
     game.timer = null;
   }
 
-  // Use match room if in a match, fallback to game ID
-  const roomId = game.matchId || game.id;
-  if (!roomId) {
-    console.error("[TurnTimer] No room ID available for game:", game.id);
-    return;
-  }
+  // Single games: room = game.id
+  const roomId = game.id;
 
-  console.log(`[TurnTimer] Starting turn for ${game.turn} → room ${roomId}`);
+  console.log(`[GameTimer] Starting turn for ${game.turn} → room ${roomId}`);
 
   game.timer = setTimeout(() => {
-    console.log(`[Timer] ${game.turn} timed out in ${roomId}`);
+    console.log(`[GameTimer] ${game.turn} timed out in game ${roomId}`);
     const loser = game.turn;
     const winner = loser === "player1" ? "player2" : "player1";
 
@@ -45,12 +39,7 @@ export function endGame(game, io, extra = {}) {
     game.timer = null;
   }
 
-  // Use match room if in a match, fallback to game ID
-  const roomId = game.matchId || game.id;
-  if (!roomId) {
-    console.error("[endGame] No room ID available for game:", game.id);
-    return;
-  }
+  const roomId = game.id;
 
   const { player1, player2 } = game.points;
   let winner = extra.winner || null;
@@ -60,9 +49,7 @@ export function endGame(game, io, extra = {}) {
   }
 
   console.log(
-    `[endGame] Ending game ${game.id} in room ${roomId} — winner: ${
-      winner || "draw"
-    }`
+    `[GameTimer] Ending single game ${game.id} — winner: ${winner || "draw"}`
   );
 
   io.to(roomId).emit("gameEnded", {
@@ -72,10 +59,10 @@ export function endGame(game, io, extra = {}) {
     ...extra,
   });
 
-  // Save to DB
   saveGameToDB(game, winner, extra.reason);
 
   game.status = GAME_STATUS.ENDED;
+
   setTimeout(() => {
     deleteGame(game.id);
     emitOpenGames(io);
@@ -83,9 +70,8 @@ export function endGame(game, io, extra = {}) {
 }
 
 async function saveGameToDB(game, winner, reason) {
-  // Skip if temp ID (not persisted)
   if (String(game.id).startsWith("game_")) {
-    console.log("[GameDB] Skipping save for non-persisted game", game.id);
+    console.log("[GameDB] Skipping save for temp single game", game.id);
     return;
   }
 
@@ -112,15 +98,15 @@ async function saveGameToDB(game, winner, reason) {
         : null,
     };
 
-    console.log(`[GameDB] Updating game ${game.id}...`, payload);
-    const response = await axios.put(
-      `${process.env.API_BASE_URL}/api/games/${game.id}`, // Use env var for consistency
+    console.log(`[GameDB] Updating single game ${game.id}...`, payload);
+    await axios.put(
+      `${process.env.API_BASE_URL}/api/games/${game.id}`,
       payload
     );
-    console.log("[GameDB] Updated:", response.data.id);
+    console.log("[GameDB] Single game updated");
   } catch (error) {
     console.error(
-      "[GameDB] Failed to save game:",
+      "[GameDB] Failed to save single game:",
       error.response?.data || error.message
     );
   }

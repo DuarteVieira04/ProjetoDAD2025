@@ -1,3 +1,4 @@
+// src/state/games.js
 import { SUITS, RANKS, CARD_POINTS, HAND_SIZE } from "../constants/index.js";
 
 function generateDeck() {
@@ -29,9 +30,12 @@ const games = new Map();
 export function getOpenGames() {
   const openGames = [];
   for (const game of games.values()) {
-    console.log(game);
-    // Explicitly exclude single player games
-    if (game.status === "waiting" && !game.isSinglePlayer) {
+    // Only public multiplayer games waiting for opponent
+    if (
+      game.status === "waiting" &&
+      !game.isSinglePlayer &&
+      game.players.player2 === null
+    ) {
       openGames.push(game);
     }
   }
@@ -39,7 +43,13 @@ export function getOpenGames() {
   return openGames;
 }
 
-export function createGame({ id, variant = "9", creator }) {
+export function createGame({
+  id,
+  variant = "9",
+  creator,
+  matchId = null,
+  players,
+}) {
   const fullDeck = shuffle(generateDeck());
   const size = HAND_SIZE[variant];
 
@@ -52,12 +62,15 @@ export function createGame({ id, variant = "9", creator }) {
   const game = {
     id,
     variant,
-    creator,
-    players: {
+    // Use passed players (for matches) or default creator setup (for single games)
+    players: players || {
       player1: { ...creator, disconnected: false },
       player2: null,
     },
-    hands: { player1: hand1, player2: hand2 },
+    hands: {
+      player1: hand1,
+      player2: hand2,
+    },
     stock,
     trumpCard,
     trumpSuit: trumpCard.suit,
@@ -66,18 +79,20 @@ export function createGame({ id, variant = "9", creator }) {
     status: "waiting",
     points: { player1: 0, player2: 0 },
     timer: null,
+    matchId, // ← Now properly preserved from input!
+    isSinglePlayer: !players, // true if creator-only (lobby game), false for matches
   };
 
-  games.set(id, game);
+  games.set(String(id), game);
   return game;
 }
 
 export function getGame(id) {
-  return games.get(id);
+  return games.get(String(id));
 }
 
 export function deleteGame(id) {
-  games.delete(id);
+  games.delete(String(id));
 }
 
 export function getAllGames() {

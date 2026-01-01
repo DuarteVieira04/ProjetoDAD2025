@@ -1,10 +1,11 @@
 import { createGame, getGame } from "../../state/games.js";
 import { startTurnTimer, endGame } from "../timers/timers.js";
-import { awardRemainingCardsToWinner, triggerBotMove } from "../gameplay/gameplay.js";
+import {
+  awardRemainingCardsToWinner,
+  triggerBotMove,
+} from "../gameplay/gameplay.js";
 import { emitOpenGames } from "../lobby/lobby.js";
-
-import { getMatch } from "../../state/matches.js";
-import { endMatch } from "../timers/match-timers.js";
+import { endMatch, getMatch } from "../../state/matches.js";
 
 export function resignHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);
@@ -24,7 +25,9 @@ export function resignHandler(io, socket, user, gameId, callback) {
   if (game.matchId) {
     const match = getMatch(game.matchId);
     if (match) {
-      console.log(`[Resign] Player ${user.nickname} resigned. Forfeiting Match ${match.id}`);
+      console.log(
+        `[Resign] Player ${user.nickname} resigned. Forfeiting Match ${match.id}`
+      );
 
       // Set marks to allow immediate win logic if needed, or just force end.
       // Rule: "forfeits all remaining games".
@@ -54,7 +57,7 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
   let normVariant = variant;
 
   if (isSinglePlayer) {
-    const parts = variant.split('-'); // e.g. "bot-3" or "bot-9"
+    const parts = variant.split("-"); // e.g. "bot-3" or "bot-9"
     normVariant = parts[1] || "9";
   }
 
@@ -70,7 +73,7 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
       id: "bot",
       nickname: "Bot",
       disconnected: false,
-      isBot: true
+      isBot: true,
     };
     game.status = "playing";
     game.startTime = Date.now();
@@ -88,7 +91,9 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
       stockSize: game.stock.length + 1,
       youAre: "player1",
       firstTurn: firstTurn,
-      opponentNickname: game.players.player2 ? game.players.player2.nickname : null,
+      opponentNickname: game.players.player2
+        ? game.players.player2.nickname
+        : null,
     });
 
     // Start turn loop
@@ -124,7 +129,10 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
   }
 
   // Prevent joining own game
-  console.log(`[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players.player1?.id}) vs User (${user.id} - ${typeof user.id})`);
+  console.log(
+    `[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players
+      .player1?.id}) vs User (${user.id} - ${typeof user.id})`
+  );
 
   // Check if rejoining (Player 1)
   if (game.players.player1?.id === user.id) {
@@ -141,7 +149,9 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
       stockSize: game.stock.length + 1,
       youAre: "player1",
       firstTurn: game.turn,
-      opponentNickname: game.players.player2 ? game.players.player2.nickname : null,
+      opponentNickname: game.players.player2
+        ? game.players.player2.nickname
+        : null,
     });
 
     return callback?.({ success: true, isRejoin: true });
@@ -158,7 +168,9 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
       stockSize: game.stock.length + 1,
       youAre: "player2",
       firstTurn: game.turn,
-      opponentNickname: game.players.player1 ? game.players.player1.nickname : null,
+      opponentNickname: game.players.player1
+        ? game.players.player1.nickname
+        : null,
     });
     return callback?.({ success: true, isRejoin: true });
   }
@@ -199,7 +211,9 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     stockSize: game.stock.length + 1,
     youAre: "player1",
     firstTurn: firstTurn,
-    opponentNickname: game.players.player2 ? game.players.player2.nickname : null,
+    opponentNickname: game.players.player2
+      ? game.players.player2.nickname
+      : null,
   });
 
   socket.emit("gameStarted", {
@@ -210,7 +224,9 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     stockSize: game.stock.length + 1,
     youAre: "player2",
     firstTurn: game.turn,
-    opponentNickname: game.players.player1 ? game.players.player1.nickname : null,
+    opponentNickname: game.players.player1
+      ? game.players.player1.nickname
+      : null,
   });
 
   if (game.status === "playing") {

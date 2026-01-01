@@ -1,182 +1,247 @@
 // src/stores/useGameStore.js
-import { ref, inject } from 'vue'
+import { ref, inject, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-
 export const useGameStore = defineStore('game', () => {
-  // Direct injection to avoid lifecycle cleanup issues from useSocket composable
   const socket = inject('socket')
 
   const emit = (event, data, callback) => {
     socket.emit(event, data, callback)
   }
 
-  let timerInterval = null
-
-  // Helper to prevent duplicate listeners if store is re-setup (though stores are singletons usually)
   const on = (event, handler) => {
-    socket.off(event) // Clear previous to be safe
+    socket.off(event) // Prevent duplicate listeners
     socket.on(event, handler)
   }
 
-  // State
+  let timerInterval = null
+
+  const stopTimer = () => {
+    if (timerInterval) {
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
+  }
+
+  // Core state
+  const currentId = ref(null) // matchId or gameId
+  const type = ref(null) // 'match' or 'game'
+  const status = ref('waiting') // waiting | playing | ended
+
   const myHand = ref([])
   const opponentHandCount = ref(0)
-  const stockCount = ref(0)
+  const stockCount = ref(40)
   const trumpCard = ref(null)
   const trumpSuit = ref('')
+
   const playedCards = ref({ player1: null, player2: null })
+
   const myPoints = ref(0)
   const opponentPoints = ref(0)
+
   const isMyTurn = ref(false)
   const timerSeconds = ref(20)
+  const turnTimeLimit = ref(20)
+
   const opponentNickname = ref('Waiting...')
-  const gameId = ref(null)
-  const youAre = ref(null)
-  const status = ref('waiting')
+  const youAre = ref(null) // 'player1' or 'player2'
+
+  const stake = ref(0)
+  const marks = ref({ you: 0, opponent: 0 })
+
+  const gameOverData = ref(null)
+
+  // Computed for UI convenience
+  const myFinalPoints = computed(() => {
+    if (!gameOverData.value?.points) return 0
+    return gameOverData.value.points[youAre.value] ?? 0
+  })
+
+  const opponentFinalPoints = computed(() => {
+    if (!gameOverData.value?.points) return 0
+    const opp = youAre.value === 'player1' ? 'player2' : 'player1'
+    return gameOverData.value.points[opp] ?? 0
+  })
+
+  const isMatch = computed(() => type.value === 'match')
+  const isGameOver = computed(() => status.value === 'ended')
+
+  const myMarks = computed(() => marks.value.you)
+  const opponentMarks = computed(() => marks.value.opponent)
+
+  // Game ready when we have hand + trump + playing status
+  const gameReady = computed(
+    () =>
+      status.value === 'playing' &&
+      myHand.value.length > 0 &&
+      trumpCard.value !== null &&
+      youAre.value !== null,
+  )
 
   // Actions
   const playCard = (card) => {
-    if (!isMyTurn.value || !gameId.value) return
-    emit('playCard', { gameId: gameId.value, card: { suit: card.suit, rank: card.rank } }, (res) => {
-      if (res && res.error) {
-        alert(res.error)
-      }
-    })
-  }
+    if (!isMyTurn.value || !currentId.value) return
 
-  const createGame = (variant = '9') => {
-    return new Promise((resolve) => {
-      emit(
-        'createGame',
-        {
-          variant,
-        },
-        (res) => {
-          resolve(res)
-        },
-      )
-    })
-  }
-
-  const joinGame = (id) => {
-    return new Promise((resolve, reject) => {
-      emit('joinGame', { gameId: id }, (res) => {
-        if (res.success) {
-          gameId.value = id
-          resolve()
-        } else {
-          reject(res.error)
-        }
-      })
-    })
-  }
-
-  const joinMatch = (id) => {
-    return new Promise((resolve, reject) => {
-      emit('joinMatch', { matchId: id }, (res) => {
-        if (res.success) {
-          gameId.value = id // Use gameId ref to track the current "room" ID
-          status.value = 'negotiating'
-          resolve()
-        } else {
-          reject(res.error)
-        }
-      })
-    })
+    emit(
+      'playCard',
+      {
+        gameId: currentId.value,
+        card: { suit: card.suit, rank: card.rank },
+      },
+      (res) => {
+        if (res?.error) alert(res.error)
+      },
+    )
   }
 
   const resign = () => {
-    if (!gameId.value) return
-    emit('resign', { gameId: gameId.value }, (res) => {
-      if (res && res.error) alert(res.error)
+    if (!currentId.value) return
+    emit('resign', { gameId: currentId.value })
+  }
+
+  const joinGame = (gameId) => {
+    return new Promise((resolve, reject) => {
+      emit('joinGame', { gameId }, (res) => {
+        if (res.success) {
+          currentId.value = gameId
+          type.value = 'game'
+          status.value = 'playing'
+          resolve()
+        } else {
+          reject(res.error || 'Failed to join game')
+        }
+      })
+    })
+  }
+
+  const joinMatch = (matchId) => {
+    return new Promise((resolve, reject) => {
+      emit('joinMatch', { matchId }, (res) => {
+        if (res.success) {
+          currentId.value = matchId
+          type.value = 'match'
+          status.value = 'playing'
+          resolve()
+        } else {
+          reject(res.error || 'Failed to join match')
+        }
+      })
     })
   }
 
   const reset = () => {
-    if (timerInterval) clearInterval(timerInterval)
+    stopTimer()
+
+    currentId.value = null
+    type.value = null
+    status.value = 'waiting'
+
     myHand.value = []
     opponentHandCount.value = 0
-    stockCount.value = 0
+    stockCount.value = 40
     trumpCard.value = null
     trumpSuit.value = ''
+
     playedCards.value = { player1: null, player2: null }
+
     myPoints.value = 0
     opponentPoints.value = 0
+
     isMyTurn.value = false
     timerSeconds.value = 20
+    turnTimeLimit.value = 20
+
     opponentNickname.value = 'Waiting...'
-    gameId.value = null
     youAre.value = null
-    status.value = 'waiting'
+
+    stake.value = 0
+    marks.value = { you: 0, opponent: 0 }
+
+    gameOverData.value = null
   }
 
-  // Setup all listeners once
-  // Since this store is a singleton, these will persist.
-  // Note: We avoid useSocket() because it attaches onUnmounted() which kills listeners on route change.
-
-  on('gameStarted', (data) => {
-    console.log('[GameStore] Received gameStarted:', data)
-    myHand.value = data.yourHand || []
-    opponentHandCount.value = data.opponentHandSize || 0
-    stockCount.value = data.stockSize || 0
-    trumpCard.value = data.trumpCardFilename ? { filename: data.trumpCardFilename } : null
-    trumpSuit.value = data.trumpSuit
-    youAre.value = data.youAre
-
-    // Use provided nickname or default based on scenario
-    if (data.opponentNickname) {
-      opponentNickname.value = data.opponentNickname
-    } else {
-      opponentNickname.value = 'Opponent' // Fallback for multiplayer
-    }
-
-    // Set turn immediately
-    isMyTurn.value = data.firstTurn === data.youAre
-
-    status.value = 'playing'
-  })
+  // === Socket Listeners ===
 
   on('opponentJoined', ({ nickname }) => {
-    console.log('[GameStore] Opponent joined:', nickname)
     opponentNickname.value = nickname
+    console.log('[GameStore] Opponent joined:', nickname)
+  })
+
+  on('matchStarted', ({ stake: matchStake }) => {
+    stake.value = matchStake
+    console.log('[GameStore] Match started with stake:', matchStake)
+  })
+
+  on('gameStarted', (data) => {
+    console.log('[GameStore] Public gameStarted received:', data)
+
+    opponentHandCount.value = data.opponentHandSize || 0
+    stockCount.value = data.stockSize || 40
+    trumpCard.value = data.trumpCardFilename ? { filename: data.trumpCardFilename } : null
+    trumpSuit.value = data.trumpSuit || ''
+    youAre.value = data.youAre
+    opponentNickname.value = data.opponentNickname || 'Opponent'
+    isMyTurn.value = data.firstTurn === data.youAre
     status.value = 'playing'
   })
 
-  on('turnStarted', ({ player, seconds }) => {
+  on('gameStartedPrivate', (data) => {
+    console.log('[GameStore] Private gameStartedPrivate received:', data)
+
+    myHand.value = data.yourHand || []
+    opponentHandCount.value = data.opponentHandSize || 0
+    youAre.value = data.youAre
+
+    // Sort hand: suits alphabetical, then rank descending (Ace high if rank 14)
+    myHand.value.sort((a, b) => {
+      if (a.suit !== b.suit) return a.suit.localeCompare(b.suit)
+      return b.rank - a.rank
+    })
+  })
+
+  on('turnStarted', ({ player, seconds = 20 }) => {
+    console.log(`TURNSTARTED: ${player}`)
     isMyTurn.value = player === youAre.value
     timerSeconds.value = seconds
+    turnTimeLimit.value = seconds
 
-    // Clear existing timer if any
-    if (timerInterval) clearInterval(timerInterval)
+    stopTimer()
 
-    // Start countdown
     timerInterval = setInterval(() => {
       if (timerSeconds.value > 0) {
         timerSeconds.value--
       } else {
-        clearInterval(timerInterval)
+        stopTimer()
       }
     }, 1000)
   })
 
   on('cardPlayed', ({ player, card }) => {
     const key = player === 'player1' ? 'player1' : 'player2'
-    playedCards.value[key] = { ...card, isWinner: false }
+    playedCards.value = {
+      ...playedCards.value,
+      [key]: { ...card, isWinner: false },
+    }
 
-    // If it was ME who played, remove from myHand
+    // Remove from my hand if I played
     if (player === youAre.value) {
-      const idx = myHand.value.findIndex(
-        (c) => c.suit === card.suit && c.rank === card.rank
-      )
-      if (idx !== -1) {
-        myHand.value.splice(idx, 1)
-      }
+      const idx = myHand.value.findIndex((c) => c.suit === card.suit && c.rank === card.rank)
+      if (idx !== -1) myHand.value.splice(idx, 1)
+    }
+
+    // Update opponent hand count
+    if (player !== youAre.value) {
+      opponentHandCount.value = Math.max(0, opponentHandCount.value - 1)
     }
   })
 
   on('cardDrawn', (card) => {
     myHand.value.push(card)
+    // Re-sort after draw
+    myHand.value.sort((a, b) => {
+      if (a.suit !== b.suit) return a.suit.localeCompare(b.suit)
+      return b.rank - a.rank
+    })
   })
 
   on('stockUpdated', ({ newStockSize }) => {
@@ -193,44 +258,100 @@ export const useGameStore = defineStore('game', () => {
     }
   })
 
-  on('roundEnded', () => {
-    playedCards.value = { player1: null, player2: null }
+  on('marksUpdated', ({ currentMarks }) => {
+    if (isMatch.value && currentMarks) {
+      marks.value = {
+        you: youAre.value === 'player1' ? currentMarks.player1 : currentMarks.player2,
+        opponent: youAre.value === 'player1' ? currentMarks.player2 : currentMarks.player1,
+      }
+    }
   })
 
-  const gameOverData = ref(null)
+  on('roundEnded', ({ winner }) => {
+    if (winner) {
+      const key = winner === 'player1' ? 'player1' : 'player2'
+      if (playedCards.value[key]) {
+        playedCards.value[key].isWinner = true
+      }
+    }
+
+    setTimeout(() => {
+      playedCards.value = { player1: null, player2: null }
+    }, 1500)
+  })
 
   on('gameEnded', ({ winner, points, reason }) => {
-    if (timerInterval) clearInterval(timerInterval)
+    stopTimer()
     status.value = 'ended'
     gameOverData.value = { winner, points, reason }
-    // No alert, UI should handle this
-    console.log('Game Ended', { winner, points, reason })
+  })
+
+  on('matchEnded', ({ winner, finalMarks, reason }) => {
+    stopTimer()
+    status.value = 'ended'
+    gameOverData.value = { winner, points: null, reason: reason || 'Match completed' }
+
+    if (finalMarks) {
+      marks.value = {
+        you:
+          youAre.value === winner
+            ? finalMarks[winner]
+            : finalMarks[youAre.value === 'player1' ? 'player2' : 'player1'],
+        opponent:
+          youAre.value === winner
+            ? finalMarks[youAre.value === 'player1' ? 'player2' : 'player1']
+            : finalMarks[winner],
+      }
+    }
   })
 
   on('invalidMove', ({ reason }) => {
     alert('Invalid move: ' + reason)
   })
 
+  on('disconnect', () => {
+    stopTimer()
+    status.value = 'waiting'
+    opponentNickname.value = 'Waiting...'
+    console.warn('[GameStore] Socket disconnected')
+  })
+
   return {
+    // State
+    currentId,
+    type,
+    status,
     myHand,
     opponentHandCount,
     stockCount,
     trumpCard,
+    trumpSuit,
     playedCards,
     myPoints,
     opponentPoints,
     isMyTurn,
     timerSeconds,
+    turnTimeLimit,
     opponentNickname,
-    gameId,
     youAre,
-    status,
+    stake,
+    marks,
     gameOverData,
-    reset,
+
+    // Computed
+    myFinalPoints,
+    opponentFinalPoints,
+    myMarks,
+    opponentMarks,
+    isMatch,
+    isGameOver,
+    gameReady,
+
+    // Actions
     playCard,
-    createGame,
+    resign,
     joinGame,
     joinMatch,
-    resign,
+    reset,
   }
 })

@@ -1,144 +1,139 @@
+// src/gameplay/gameplay.js
+
 import { getGame } from "../../state/games.js";
-import { startTurnTimer, endGame } from "../timers/timers.js";
+import { getMatch } from "../../state/matches.js";
+import { startTurnTimer as startGameTurnTimer } from "../timers/game-timers.js";
+import { startTurnTimer as startMatchTurnTimer } from "../timers/match-timers.js";
+import { endGame } from "../timers/game-timers.js";
 import { CARD_POINTS } from "../../constants/index.js";
 import { getCardValue, getCardStrength } from "../../utils/cards.js";
 import { calculateBotMove } from "../../bot/logic.js";
 
 export function playCardHandler(io, socket, user, { gameId, card }, callback) {
-  const game = getGame(gameId);
-  if (!game) return callback?.({ error: "Game not found" });
+  // Unified lookup: works for single games AND current game in matches
+  const game = getGame(gameId) || getGame(getMatch(gameId).currentGame);
 
-  if (game.status !== "playing")
+  if (!game) {
+    return callback?.({ error: "Game not found" });
+  }
+
+  console.log({ game });
+  if (game.status !== "playing") {
     return callback?.({ error: "Game not in progress" });
+  }
+  console.log(`[PlayCard] Current game.turn value:`, game.turn);
 
   // Identify player
-  const playerKey =
-    game.players.player1.id === user.id
-      ? "player1"
-      : game.players.player2.id === user.id
-        ? "player2"
-        : null;
-  if (!playerKey) return callback?.({ error: "You are not in this game" });
+  let playerKey = null;
+  if (game.players.player1?.id === user.id) playerKey = "player1";
+  else if (game.players.player2?.id === user.id) playerKey = "player2";
 
-  // Check turn
-  if (game.turn !== playerKey) return callback?.({ error: "Not your turn" });
+  if (!playerKey) {
+    return callback?.({ error: "You are not a player in this game" });
+  }
 
-  // Check card in hand
+  // Turn validation
+  if (game.turn !== playerKey) {
+    console.log(
+      `[PlayCard] Turn rejected: ${playerKey} tried to play, but turn is ${game.turn}`
+    );
+    return callback?.({ error: "Not your turn" });
+  }
+
+  // Card validation
   const hand = game.hands[playerKey];
   const cardIndex = hand.findIndex(
     (c) => c.suit === card.suit && c.rank === card.rank
   );
-  if (cardIndex === -1) return callback?.({ error: "Card not in hand" });
+  if (cardIndex === -1) {
+    return callback?.({ error: "Card not in your hand" });
+  }
 
-  // Remove card from hand
   const playedCard = hand.splice(cardIndex, 1)[0];
 
-  // execute move
+  console.log(
+    `[PlayCard] ${playerKey} played ${playedCard.rank} of ${playedCard.suit} (game ${gameId})`
+  );
+
   executeMove(io, game, playerKey, playedCard);
 
   callback?.({ success: true });
 }
 
 export function executeMove(io, game, playerKey, playedCard) {
-  // Add to trick
+  const isMatch = !!game.matchId;
+  const roomId = isMatch ? game.matchId : game.id;
+  const startTurnTimer = isMatch ? startMatchTurnTimer : startGameTurnTimer;
+
+  // Clear existing timer
+  if (game.timer) {
+    clearTimeout(game.timer);
+    game.timer = null;
+  }
+
+  // Record the play
   game.currentTrick.push({ player: playerKey, card: playedCard });
 
-  // Emit cardPlayed
-  io.to(game.id).emit("cardPlayed", { player: playerKey, card: playedCard });
-
-  // Stop timer
-  if (game.timer) clearTimeout(game.timer);
+  // Broadcast play
+  io.to(roomId).emit("cardPlayed", {
+    player: playerKey,
+    card: {
+      suit: playedCard.suit,
+      rank: playedCard.rank,
+      filename: playedCard.filename,
+      value: playedCard.value,
+    },
+  });
 
   if (game.currentTrick.length === 1) {
-    // Switch turn
+    // First card — switch turn
     game.turn = playerKey === "player1" ? "player2" : "player1";
     startTurnTimer(game, io);
 
-    // If it's now Bot's turn to respond (Bot is player2)
-    if (game.isSinglePlayer && game.turn === "player2") {
-      setTimeout(() => {
-        triggerBotMove(game, io);
-      }, 1000 + Math.random() * 500);
+    // Bot response in single player
+    if (!isMatch && game.isSinglePlayer && game.turn === "player2") {
+      setTimeout(() => triggerBotMove(io, game), 800 + Math.random() * 800);
     }
   } else {
-    // Trick complete
-    const c1 = game.currentTrick[0];
-    const c2 = game.currentTrick[1];
+    // Trick complete — determine winner
+    const [c1, c2] = game.currentTrick;
+    let winnerKey = c1.player;
+    const leadSuit = c1.card.suit;
 
-    let winnerKey = c1.player; // default to leader
-    const card1 = c1.card;
-    const card2 = c2.card;
-
-    // Logic: Winner is highest trump, or highest of led suit if no trump.
-    // If card2 is trump and card1 is not, card2 wins.
-    if (card2.suit === game.trumpSuit && card1.suit !== game.trumpSuit) {
+    if (c2.card.suit === game.trumpSuit && c1.card.suit !== game.trumpSuit) {
       winnerKey = c2.player;
-    } else if (card1.suit === card2.suit) {
-      if (getCardStrength(card2.rank) > getCardStrength(card1.rank)) {
+    } else if (c1.card.suit === c2.card.suit) {
+      if (getCardStrength(c2.card.rank) > getCardStrength(c1.card.rank)) {
         winnerKey = c2.player;
       }
     }
 
-    // Points
-    const points = getCardValue(card1.rank) + getCardValue(card2.rank);
+    // Award points
+    const points = getCardValue(c1.card.rank) + getCardValue(c2.card.rank);
     game.points[winnerKey] += points;
 
-    // Emit result
-    io.to(game.id).emit("playerPointsUpdated", {
+    io.to(roomId).emit("playerPointsUpdated", {
       player1Points: game.points.player1,
       player2Points: game.points.player2,
     });
 
-    // Clear trick
-    game.currentTrick = [];
+    // Draw cards (winner first)
+    drawCardsAfterTrick(io, game, winnerKey, roomId);
 
-    // Draw cards
-    if (game.stock.length > 0 || game.trumpCard) {
-      const winnerDraw =
-        game.stock.length > 0 ? game.stock.pop() : game.trumpCard;
-      if (winnerDraw === game.trumpCard) game.trumpCard = null; // Mark taken
-
-      let loserDraw = null;
-      if (game.stock.length > 0) {
-        loserDraw = game.stock.pop();
-      } else if (game.trumpCard) {
-        loserDraw = game.trumpCard;
-        game.trumpCard = null; // Mark taken
-      }
-
-      const loserKey = winnerKey === "player1" ? "player2" : "player1";
-
-      if (winnerDraw) game.hands[winnerKey].push(winnerDraw);
-      if (loserDraw) game.hands[loserKey].push(loserDraw);
-
-      io.to(game.id).emit("stockUpdated", {
-        newStockSize: game.stock.length + (game.trumpCard ? 1 : 0),
-      });
-
-      // Send specific cards to specific players
-      if (winnerDraw)
-        sendCardToPlayer(io, game.id, game.players[winnerKey].id, winnerDraw);
-      if (loserDraw)
-        sendCardToPlayer(io, game.id, game.players[loserKey].id, loserDraw);
-    }
-
-    // Check game end conditions
+    // Check end of hand
     if (game.hands.player1.length === 0 && game.hands.player2.length === 0) {
-      endGame(game, io, { reason: "normal" });
+      setTimeout(() => endGame(game, io, { reason: "normal" }), 2000);
       return;
     }
 
-    // Winner leads
+    // Winner leads next trick
     game.turn = winnerKey;
 
     setTimeout(() => {
-      io.to(game.id).emit("roundEnded", {});
+      io.to(roomId).emit("roundEnded", { winner: winnerKey });
 
-      // Check for Bot Turn
-      if (game.isSinglePlayer && game.turn === "player2") {
-        setTimeout(() => {
-          triggerBotMove(game, io);
-        }, 1000 + Math.random() * 1000); // 1-2s delay
+      if (!isMatch && game.isSinglePlayer && game.turn === "player2") {
+        setTimeout(() => triggerBotMove(io, game), 1000 + Math.random() * 1000);
       } else {
         startTurnTimer(game, io);
       }
@@ -146,69 +141,100 @@ export function executeMove(io, game, playerKey, playedCard) {
   }
 }
 
-function sendCardToPlayer(io, gameId, userId, card) {
-  const roomSockets = io.sockets.adapter.rooms.get(gameId);
-  if (roomSockets) {
-    for (const socketId of roomSockets) {
-      const s = io.sockets.sockets.get(socketId);
-      if (s && s.handshake.auth.id === userId) {
-        s.emit("cardDrawn", card);
-      }
+function drawCardsAfterTrick(io, game, winnerKey, roomId) {
+  const loserKey = winnerKey === "player1" ? "player2" : "player1";
+
+  let winnerCard = null;
+  let loserCard = null;
+
+  if (game.stock.length > 0) {
+    winnerCard = game.stock.pop();
+  } else if (game.trumpCard) {
+    winnerCard = game.trumpCard;
+    game.trumpCard = null;
+  }
+
+  if (game.stock.length > 0) {
+    loserCard = game.stock.pop();
+  }
+
+  if (winnerCard) {
+    game.hands[winnerKey].push(winnerCard);
+    sendCardToPlayer(io, roomId, game.players[winnerKey].id, winnerCard);
+  }
+
+  if (loserCard) {
+    game.hands[loserKey].push(loserCard);
+    sendCardToPlayer(io, roomId, game.players[loserKey].id, loserCard);
+  }
+
+  io.to(roomId).emit("stockUpdated", {
+    newStockSize: game.stock.length + (game.trumpCard ? 1 : 0),
+  });
+}
+
+function sendCardToPlayer(io, roomId, userId, card) {
+  const roomSockets = io.sockets.adapter.rooms.get(roomId);
+  if (!roomSockets) return;
+
+  for (const socketId of roomSockets) {
+    const socket = io.sockets.sockets.get(socketId);
+    const socketUserId =
+      socket.user?.id ||
+      socket.handshake.auth?.id ||
+      socket.handshake.auth?.user?.id;
+    if (String(socketUserId) === String(userId)) {
+      socket.emit("cardDrawn", card);
+      return;
     }
   }
 }
 
-export function triggerBotMove(game, io) {
-  console.log("[Bot] Thinking...");
+export function triggerBotMove(io, game) {
+  console.log("[Bot] Calculating move...");
   const move = calculateBotMove(game, "player2");
 
-  if (move) {
-    console.log(`[Bot] Plays ${move.suit}-${move.rank}`);
-    // Remove from hand is handled in playCardHandler, but here we call executeMove directly.
-    // We must remove it manually first.
-    const hand = game.hands.player2;
-    const index = hand.findIndex(c => c.suit === move.suit && c.rank === move.rank);
-    if (index !== -1) {
-      const playedCard = hand.splice(index, 1)[0];
-      executeMove(io, game, "player2", playedCard);
-    } else {
-      console.error("[Bot] Error: Selected card not in hand!");
-    }
-  } else {
-    console.error("[Bot] No valid move found!");
+  if (!move) {
+    console.error("[Bot] No valid move!");
+    return;
   }
+
+  const hand = game.hands.player2;
+  const index = hand.findIndex(
+    (c) => c.suit === move.suit && c.rank === move.rank
+  );
+  if (index === -1) {
+    console.error("[Bot] Card not in hand!");
+    return;
+  }
+
+  const playedCard = hand.splice(index, 1)[0];
+  console.log(`[Bot] Played ${playedCard.rank} of ${playedCard.suit}`);
+
+  executeMove(io, game, "player2", playedCard);
 }
 
 export function awardRemainingCardsToWinner(game, winnerKey) {
   let totalPoints = 0;
 
-  // 1. Hands
   ["player1", "player2"].forEach((pk) => {
-    game.hands[pk].forEach((card) => {
-      totalPoints += getCardValue(card.rank);
-    });
-    game.hands[pk] = []; // Clear hand
+    game.hands[pk].forEach((card) => (totalPoints += getCardValue(card.rank)));
+    game.hands[pk].length = 0;
   });
 
-  // 2. Stock
-  game.stock.forEach((card) => {
-    totalPoints += getCardValue(card.rank);
-  });
-  game.stock = []; // Clear stock
+  game.stock.forEach((card) => (totalPoints += getCardValue(card.rank)));
+  game.stock.length = 0;
 
-  // 3. Trump card
   if (game.trumpCard) {
     totalPoints += getCardValue(game.trumpCard.rank);
     game.trumpCard = null;
   }
 
-  // 4. Current trick
-  game.currentTrick.forEach((item) => {
-    totalPoints += getCardValue(item.card.rank);
-  });
+  game.currentTrick.forEach(
+    (item) => (totalPoints += getCardValue(item.card.rank))
+  );
   game.currentTrick = [];
 
-  // Add to winner's score
   game.points[winnerKey] += totalPoints;
   console.log(`[Forfeit] Awarded ${totalPoints} points to ${winnerKey}`);
 }

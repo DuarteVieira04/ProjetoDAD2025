@@ -42,3 +42,36 @@ export function getOpenMatches() {
 export function deleteMatch(id) {
   matches.delete(String(id));
 }
+
+export function endMatch(match, io, extra = {}) {
+  if (!match || !io) {
+    console.error("[endMatch] Invalid match or io");
+    return;
+  }
+
+  const winnerKey = extra.winner; // 'player1' or 'player2'
+  const reason = extra.reason || "marks_reached";
+
+  console.log(
+    `[MatchState] Ending match ${match.id} — Winner: ${
+      winnerKey || "draw"
+    }, Reason: ${reason}`
+  );
+
+  // Emit final match result to both players
+  io.to(match.id).emit("matchEnded", {
+    winner: winnerKey,
+    finalMarks: match.marks,
+    totalPoints: match.points,
+    reason,
+    stake: match.stake,
+  });
+
+  // Optional: Mark players as disconnected or free (if needed)
+
+  // Clean up server state
+  deleteMatch(match.id);
+
+  // Optional: broadcast updated open matches list
+  // emitOpenMatches(io);
+}

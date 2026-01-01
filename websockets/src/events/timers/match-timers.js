@@ -1,58 +1,63 @@
-// timers/matchTimers.js
-import { deleteMatch } from "../../state/matches.js";
-import { emitOpenMatches } from "../lobby/match-lobby.js";
+// src/timers/match-timers.js
 
-import axios from "axios";
+import { endMatch as cleanupMatch } from "../../state/matches.js"; // rename to avoid conflict
+import { TIMER_SECONDS } from "../../constants/index.js";
 
-export function endMatch(match, io, { winnerKey, reason }) {
-  if (match.negotiationTimer) clearTimeout(match.negotiationTimer);
+import { awardRemainingCardsToWinner } from "../gameplay/gameplay.js";
 
-  const loserKey = winnerKey === "player1" ? "player2" : "player1";
-  const totalStake = match.stake * 2;
-  const payout = totalStake - 1;
-  const winnerId = match.players[winnerKey].id;
+export function startTurnTimer(game, io) {
+  if (game.timer) {
+    clearTimeout(game.timer);
+    game.timer = null;
+  }
 
+  // Matches: room = matchId
+  const roomId = game.matchId;
+  if (!roomId) {
+    console.error("[MatchTimer] No matchId on game object!", game.id);
+    return;
+  }
 
-  io.to(match.id).emit("matchEnded", {
-    winner: winnerKey,
-    reason,
-    finalMarks: match.marks,
-    finalPoints: match.points,
-    payout,
+  console.log(
+    `[MatchTimer] Starting turn for ${game.turn} → match room ${roomId}`
+  );
+
+  game.timer = setTimeout(() => {
+    console.log(`[MatchTimer] ${game.turn} timed out in match room ${roomId}`);
+    const loser = game.turn;
+    const winner = loser === "player1" ? "player2" : "player1";
+
+    awardRemainingCardsToWinner(game, winner);
+    endCurrentGame(game, io, { reason: "timeout", winner });
+  }, TIMER_SECONDS * 1000);
+
+  io.to(roomId).emit("turnStarted", {
+    player: game.turn,
+    seconds: TIMER_SECONDS,
   });
-
-  saveMatchToDB(match, winnerKey, reason);
-
-  match.status = "ended";
-  setTimeout(() => {
-    deleteMatch(match.id);
-    emitOpenMatches(io);
-  }, 30000);
 }
 
-async function saveMatchToDB(match, winnerKey, reason) {
-  try {
-    const payload = {
-      status: "Ended",
-      winner_user_id: winnerKey ? match.players[winnerKey].id : null,
-      loser_user_id: winnerKey
-        ? match.players[winnerKey === "player1" ? "player2" : "player1"].id
-        : null,
-      player1_marks: match.marks.player1,
-      player2_marks: match.marks.player2,
-      player1_points: match.points.player1,
-      player2_points: match.points.player2,
-      total_time: match.startTime
-        ? Math.round((Date.now() - match.startTime) / 1000)
-        : null,
-    };
-
-    // We also remove coins/payout logic because we moved it to API controller
-    // But we still need to call API to trigger the logic.
-
-    console.log(`[MatchDB] Updating match ${match.id}...`, payload);
-    await axios.put(`http://127.0.0.1:8000/api/matches/${match.id}`, payload);
-  } catch (error) {
-    console.error("[MatchDB] Error:", error.response?.data || error.message);
+export function endCurrentGame(game, io, extra = {}) {
+  if (game.timer) {
+    clearTimeout(game.timer);
+    game.timer = null;
   }
+
+  const roomId = game.matchId;
+
+  const { player1, player2 } = game.points;
+  let winner = extra.winner || null;
+  if (!winner) {
+    if (player1 >= 61) winner = "player1";
+    else if (player2 >= 61) winner = "player2";
+  }
+
+  console.log(`[MatchTimer] Current game ended — winner: ${winner || "draw"}`);
+
+  io.to(roomId).emit("gameEnded", {
+    winner,
+    reason: extra.reason || (winner ? "normal" : "draw"),
+    points: game.points,
+    ...extra,
+  });
 }
