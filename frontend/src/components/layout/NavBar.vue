@@ -51,6 +51,18 @@
             </NavigationMenuContent>
           </NavigationMenuItem>
 
+          <NavigationMenuItem>
+            <NavigationMenuLink as-child>
+              <RouterLink to="/statistics">Statistics</RouterLink>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem v-if="userLoggedIn">
+            <NavigationMenuLink as-child>
+              <RouterLink to="/matches/history">Match History</RouterLink>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+
           <NavigationMenuItem v-if="userLoggedIn">
             <NavigationMenuLink as-child>
               <RouterLink to="/shop">Shop</RouterLink>
@@ -150,6 +162,26 @@
                     @click="open = false"
                   >
                     Admin
+                  </RouterLink>
+                </li>
+
+                <li>
+                  <RouterLink
+                    to="/statistics"
+                    class="block py-2 font-medium hover:text-foreground transition-colors"
+                    @click="open = false"
+                  >
+                    Statistics
+                  </RouterLink>
+                </li>
+
+                <li v-if="userLoggedIn">
+                  <RouterLink
+                    to="/matches/history"
+                    class="block py-2 font-medium hover:text-foreground transition-colors"
+                    @click="open = false"
+                  >
+                    Match History
                   </RouterLink>
                 </li>
 

@@ -91,10 +91,16 @@ export const useAPIStore = defineStore('api', () => {
   //Statistics
   const getPublicStatistics = () => axios.get(`${API_BASE_URL}/statistics/public`)
   const getUserStatistics = () => axios.get(`${API_BASE_URL}/statistics/me`)
+  const getAdminStatistics = () => axios.get(`${API_BASE_URL}/statistics`)
 
   // Leaderboards
   const getGlobalLeaderboard = (limit = 50) => axios.get(`${API_BASE_URL}/leaderboards/global`, { params: { limit } })
   const getPersonalLeaderboard = (params = {}) => axios.get(`${API_BASE_URL}/leaderboards/personal`, { params })
+
+  // Match History
+  const getUserMatchHistory = () => axios.get(`${API_BASE_URL}/matches/history/my`)
+  const getAllMatchHistory = () => axios.get(`${API_BASE_URL}/matches/history/all`)
+  const getMatchDetails = (matchId) => axios.get(`${API_BASE_URL}/matches/${matchId}/details`)
 
   return {
     token,
@@ -113,8 +119,12 @@ export const useAPIStore = defineStore('api', () => {
     createMatch,
     getPublicStatistics,
     getUserStatistics,
+    getAdminStatistics,
     getGlobalLeaderboard,
     getPersonalLeaderboard,
+    getUserMatchHistory,
+    getAllMatchHistory,
+    getMatchDetails,
   }
 })
 

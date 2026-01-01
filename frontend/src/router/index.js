@@ -12,6 +12,7 @@ import CoinTransactionHistoryPage from '@/pages/shop/CoinTransactionHistoryPage.
 import GameView from '@/pages/game/GameView.vue'
 import LobbyPage from '@/pages/lobby/LobbyPage.vue'
 import ViewMatches from '@/pages/matches/ViewMatches.vue'
+import MatchHistoryPage from '@/pages/matches/MatchHistoryPage.vue'
 import StatisticsPage from '@/pages/statistics/StatisticsPage.vue'
 import GlobalLeaderboard from '@/pages/leaderboards/GlobalLeaderboard.vue'
 import PersonalLeaderboard from '@/pages/leaderboards/PersonalLeaderboard.vue'
@@ -36,6 +37,14 @@ const router = createRouter({
     {
       path: '/lobby/matches',
       component: ViewMatches,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/matches/history',
+      name: 'match-history',
+      component: MatchHistoryPage,
       meta: {
         requiresAuth: true,
       },

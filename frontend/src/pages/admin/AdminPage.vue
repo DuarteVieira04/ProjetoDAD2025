@@ -9,14 +9,12 @@
       @page-change="onPageChange"
       @go-to-profile="goToProfile"
     />
-    <StatisticViewer :stats="stats" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import UserList from '@/components/admin/UserList.vue'
-import StatisticViewer from '@/components/admin/StatisticViewer.vue'
 import { useAdminStore } from '@/stores/admin'
 import router from '@/router'
 

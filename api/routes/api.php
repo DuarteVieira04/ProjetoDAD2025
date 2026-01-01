@@ -28,6 +28,9 @@ Route::middleware(['auth:sanctum', EnsureAdmin::class])->group(function () {
 
     // ! Statistics Route
     Route::get('/statistics', action: [StatisticsController::class, 'getAdminStatistics']);
+    
+    // ! Match history - Admin only
+    Route::get('/matches/history/all', [MatchController::class, 'getAllHistory']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -61,6 +64,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/matches', [MatchController::class, 'create']);
     Route::post('/matches/{match}/join', [MatchController::class, 'join']);
     Route::put('/matches/{match}', [MatchController::class, 'update']);
+    
+    // Match history
+    Route::get('/matches/history/my', [MatchController::class, 'getUserHistory']);
+    Route::get('/matches/{matchId}/details', [MatchController::class, 'getMatchDetails']);
 
     Route::get('/statistics/me', [StatisticsController::class, 'getUserStatistics']);
     

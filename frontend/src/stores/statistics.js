@@ -7,6 +7,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const publicStats = ref(null)
   const userStats = ref(null)
+  const adminStats = ref(null)
   const loading = ref(false)
   const error = ref('')
 
@@ -39,12 +40,28 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   }
 
+  const fetchAdminStatistics = async () => {
+    loading.value = true
+    error.value = ''
+    try {
+      const response = await apiStore.getAdminStatistics()
+      adminStats.value = response.data
+    } catch (err) {
+      error.value = err?.response?.data?.message || 'Failed to fetch admin statistics'
+      adminStats.value = null
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     publicStats,
     userStats,
+    adminStats,
     loading,
     error,
     fetchPublicStatistics,
     fetchUserStatistics,
+    fetchAdminStatistics,
   }
 })

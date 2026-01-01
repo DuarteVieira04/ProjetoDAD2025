@@ -216,4 +216,60 @@ class MatchController extends Controller
             'coins' => -$match->stake,
         ]);
     }
+
+    /**
+     * Get match history for the authenticated user
+     * Players can only view their own match history
+     */
+    public function getUserHistory(Request $request)
+    {
+        $user = $request->user();
+        
+        $matches = Matches::where(function ($query) use ($user) {
+            $query->where('player1_user_id', $user->id)
+                  ->orWhere('player2_user_id', $user->id);
+        })
+        ->where('status', 'Ended')
+        ->with(['player1', 'player2', 'games'])
+        ->orderBy('ended_at', 'desc')
+        ->paginate(20);
+
+        return response()->json($matches);
+    }
+
+    /**
+     * Get all match history (admin only)
+     * Administrators can view all players' match histories
+     */
+    public function getAllHistory(Request $request)
+    {
+        $matches = Matches::where('status', 'Ended')
+            ->with(['player1', 'player2', 'games'])
+            ->orderBy('ended_at', 'desc')
+            ->paginate(20);
+
+        return response()->json($matches);
+    }
+
+    /**
+     * Get detailed match information
+     * Only accessible by admin or participating players
+     */
+    public function getMatchDetails(Request $request, $matchId)
+    {
+        $match = Matches::with(['player1', 'player2', 'games.player1', 'games.player2'])
+            ->findOrFail($matchId);
+
+        $user = $request->user();
+        
+        // Check if user is admin or participated in the match
+        $isAdmin = $user && $user->type === 'A';
+        $isParticipant = $user && ($match->player1_user_id == $user->id || $match->player2_user_id == $user->id);
+
+        if (!$isAdmin && !$isParticipant) {
+            return response()->json(['error' => 'Unauthorized to view this match'], 403);
+        }
+
+        return response()->json($match);
+    }
 }
