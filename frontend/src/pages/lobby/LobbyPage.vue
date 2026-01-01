@@ -41,7 +41,7 @@
             <Dialog>
               <DialogTrigger as-child>
                 <button
-                  class="ml-2 inline-flex justify-center items-center bg-black hover:bg-zinc-800 px-4 py-2 rounded-md font-medium text-white text-sm transition"
+                  class="inline-flex justify-center items-center bg-black hover:bg-zinc-800 ml-2 px-4 py-2 rounded-md font-medium text-white text-sm transition"
                 >
                   Create Match
                 </button>
@@ -64,9 +64,16 @@
                     <p class="text-[0.8rem] text-muted-foreground">Min: 3, Max: 100</p>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-2 mt-2">
-                    <Button @click="handleCreateMatch('9')" class="w-full" size="lg"> Bisca 9 </Button>
-                    <Button @click="handleCreateMatch('3')" class="w-full" variant="outline" size="lg">
+                  <div class="gap-2 grid grid-cols-2 mt-2">
+                    <Button @click="handleCreateMatch('9')" class="w-full" size="lg">
+                      Bisca 9
+                    </Button>
+                    <Button
+                      @click="handleCreateMatch('3')"
+                      class="w-full"
+                      variant="outline"
+                      size="lg"
+                    >
                       Bisca 3
                     </Button>
                   </div>
@@ -88,7 +95,9 @@
             class="flex justify-between items-center hover:bg-muted/40 p-4 border rounded-xl transition"
           >
             <div class="space-y-1">
-              <p class="font-medium text-sm">{{ game.creator.nickname || game.creator }}'s Game</p>
+              <p class="font-medium text-sm">
+                {{ game?.creator?.nickname || game.creator }}'s Game
+              </p>
               <p class="text-muted-foreground text-xs">Bisca: {{ game.variant }}</p>
             </div>
 
@@ -117,7 +126,9 @@
             class="flex justify-between items-center hover:bg-muted/40 p-4 border rounded-xl transition"
           >
             <div class="space-y-1">
-              <p class="font-medium text-sm">{{ match.creator.nickname || match.creator }}'s Match</p>
+              <p class="font-medium text-sm">
+                {{ match.creator.nickname || match.creator }}'s Match
+              </p>
               <p class="text-muted-foreground text-xs">
                 Bisca {{ match.variant }} • Stake: {{ match.stake }}
               </p>

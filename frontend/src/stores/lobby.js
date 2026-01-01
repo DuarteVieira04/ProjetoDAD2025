@@ -4,7 +4,6 @@ import { useSocket } from '@/composables/useSocket.js'
 import { useAPIStore } from './api'
 
 export const useLobbyStore = defineStore('lobby', () => {
-
   const apiStore = useAPIStore()
 
   const { emit, on } = useSocket()
@@ -53,18 +52,22 @@ export const useLobbyStore = defineStore('lobby', () => {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('WebSocket timed out waiting for server response'))
-        }, 5000);
+        }, 5000)
 
-        emit('createMatch', {
-          matchId: matchObj.id,
-          variant: matchObj.type || variant,
-          stake: matchObj.stake || stake
-        }, (socketRes) => {
-          clearTimeout(timeout)
-          console.log('Lobby: createMatch: WebSocket response:', socketRes)
-          if (socketRes && socketRes.error) reject(socketRes.error)
-          else resolve({ matchId: matchObj.id })
-        })
+        emit(
+          'createMatch',
+          {
+            matchId: matchObj.id,
+            variant: matchObj.type || variant,
+            stake: matchObj.stake || stake,
+          },
+          (socketRes) => {
+            clearTimeout(timeout)
+            console.log('Lobby: createMatch: WebSocket response:', socketRes)
+            if (socketRes && socketRes.error) reject(socketRes.error)
+            else resolve({ matchId: matchObj.id })
+          },
+        )
       })
     } catch (err) {
       console.error('Lobby Store createMatch error:', err)
@@ -99,6 +102,7 @@ export const useLobbyStore = defineStore('lobby', () => {
 
   return {
     openMatches,
+    openGames,
     joinLobby,
     createGame,
     createMatch,

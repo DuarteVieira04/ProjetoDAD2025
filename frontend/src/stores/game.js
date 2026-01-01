@@ -32,7 +32,6 @@ export const useGameStore = defineStore('game', () => {
   const opponentHandCount = ref(0)
   const stockCount = ref(40)
   const trumpCard = ref(null)
-  const trumpSuit = ref('')
 
   const playedCards = ref({ player1: null, player2: null })
 
@@ -99,6 +98,20 @@ export const useGameStore = defineStore('game', () => {
     emit('resign', { gameId: currentId.value })
   }
 
+  const createGame = (variant = '9') => {
+    return new Promise((resolve) => {
+      emit(
+        'createGame',
+        {
+          variant,
+        },
+        (res) => {
+          resolve(res)
+        },
+      )
+    })
+  }
+
   const joinGame = (gameId) => {
     return new Promise((resolve, reject) => {
       emit('joinGame', { gameId }, (res) => {
@@ -140,7 +153,6 @@ export const useGameStore = defineStore('game', () => {
     opponentHandCount.value = 0
     stockCount.value = 40
     trumpCard.value = null
-    trumpSuit.value = ''
 
     playedCards.value = { player1: null, player2: null }
 
@@ -177,26 +189,48 @@ export const useGameStore = defineStore('game', () => {
 
     opponentHandCount.value = data.opponentHandSize || 0
     stockCount.value = data.stockSize || 40
-    trumpCard.value = data.trumpCardFilename ? { filename: data.trumpCardFilename } : null
-    trumpSuit.value = data.trumpSuit || ''
+    trumpCard.value = data.trumpCard
     youAre.value = data.youAre
+    myHand.value = data.yourHand
     opponentNickname.value = data.opponentNickname || 'Opponent'
     isMyTurn.value = data.firstTurn === data.youAre
     status.value = 'playing'
   })
 
+  // In your socket listener setup (probably in useGameStore or socket init)
   on('gameStartedPrivate', (data) => {
     console.log('[GameStore] Private gameStartedPrivate received:', data)
 
-    myHand.value = data.yourHand || []
-    opponentHandCount.value = data.opponentHandSize || 0
-    youAre.value = data.youAre
+    if (!data || !data.youAre) {
+      console.warn('[GameStore] Invalid gameStartedPrivate payload')
+      return
+    }
 
-    // Sort hand: suits alphabetical, then rank descending (Ace high if rank 14)
-    myHand.value.sort((a, b) => {
-      if (a.suit !== b.suit) return a.suit.localeCompare(b.suit)
-      return b.rank - a.rank
-    })
+    // Core role & status
+    youAre.value = data.youAre
+    // gameId.value = data.gameId
+    // currentMatchId.value = data.matchId || null
+
+    // === YOUR HAND ===
+    console.log(data.yourHand)
+    myHand.value = data.yourHand
+    console.log(`[GameStore] Hand set & sorted: ${myHand.value.length} cards`)
+
+    // === OPPONENT ===
+    opponentHandCount.value = data.opponentHandSize
+    opponentNickname.value = data.opponentNickname || 'Opponent'
+
+    // === TRUMP CARD (THIS WAS MISSING!) ===
+    trumpCard.value = data.trumpCard
+
+    // === STOCK ===
+    stockCount.value = Number(data.stockSize) || 0
+
+    // === TURN ===
+    isMyTurn.value = data.firstTurn === data.youAre
+    status.value = 'playing'
+
+    console.log('[GameStore] All game state updated — UI should now show hand, trump, and fan')
   })
 
   on('turnStarted', ({ player, seconds = 20 }) => {
@@ -325,7 +359,6 @@ export const useGameStore = defineStore('game', () => {
     opponentHandCount,
     stockCount,
     trumpCard,
-    trumpSuit,
     playedCards,
     myPoints,
     opponentPoints,
@@ -350,6 +383,7 @@ export const useGameStore = defineStore('game', () => {
     // Actions
     playCard,
     resign,
+    createGame,
     joinGame,
     joinMatch,
     reset,

@@ -11,13 +11,12 @@ import { calculateBotMove } from "../../bot/logic.js";
 
 export function playCardHandler(io, socket, user, { gameId, card }, callback) {
   // Unified lookup: works for single games AND current game in matches
-  const game = getGame(gameId) || getGame(getMatch(gameId).currentGame);
+  const game = getGame(gameId) || getGame(getMatch(gameId)?.currentGame);
 
   if (!game) {
     return callback?.({ error: "Game not found" });
   }
 
-  console.log({ game });
   if (game.status !== "playing") {
     return callback?.({ error: "Game not in progress" });
   }
@@ -100,7 +99,10 @@ export function executeMove(io, game, playerKey, playedCard) {
     let winnerKey = c1.player;
     const leadSuit = c1.card.suit;
 
-    if (c2.card.suit === game.trumpSuit && c1.card.suit !== game.trumpSuit) {
+    if (
+      c2.card.suit === game.trumpCard?.suit &&
+      c1.card.suit !== game.trumpCard?.suit
+    ) {
       winnerKey = c2.player;
     } else if (c1.card.suit === c2.card.suit) {
       if (getCardStrength(c2.card.rank) > getCardStrength(c1.card.rank)) {
@@ -128,6 +130,7 @@ export function executeMove(io, game, playerKey, playedCard) {
 
     // Winner leads next trick
     game.turn = winnerKey;
+    game.currentTrick = []; // ← ADD THIS LINE: Clear for next trick
 
     setTimeout(() => {
       io.to(roomId).emit("roundEnded", { winner: winnerKey });
@@ -137,7 +140,7 @@ export function executeMove(io, game, playerKey, playedCard) {
       } else {
         startTurnTimer(game, io);
       }
-    }, 2000);
+    }, 1000);
   }
 }
 
@@ -147,17 +150,20 @@ function drawCardsAfterTrick(io, game, winnerKey, roomId) {
   let winnerCard = null;
   let loserCard = null;
 
+  // Winner draws first
   if (game.stock.length > 0) {
     winnerCard = game.stock.pop();
-  } else if (game.trumpCard) {
-    winnerCard = game.trumpCard;
-    game.trumpCard = null;
+  } else if (game.trump) {
+    winnerCard = game.trump;
+    game.trump = null;
   }
 
+  // Loser draws second — only from stock (trump already possibly taken)
   if (game.stock.length > 0) {
     loserCard = game.stock.pop();
   }
 
+  // Add cards to hands
   if (winnerCard) {
     game.hands[winnerKey].push(winnerCard);
     sendCardToPlayer(io, roomId, game.players[winnerKey].id, winnerCard);
@@ -168,8 +174,9 @@ function drawCardsAfterTrick(io, game, winnerKey, roomId) {
     sendCardToPlayer(io, roomId, game.players[loserKey].id, loserCard);
   }
 
+  // Update clients with new stock size (includes trump if still there)
   io.to(roomId).emit("stockUpdated", {
-    newStockSize: game.stock.length + (game.trumpCard ? 1 : 0),
+    newStockSize: game.stock.length + (game.trump ? 1 : 0),
   });
 }
 
@@ -225,9 +232,9 @@ export function awardRemainingCardsToWinner(game, winnerKey) {
   game.stock.forEach((card) => (totalPoints += getCardValue(card.rank)));
   game.stock.length = 0;
 
-  if (game.trumpCard) {
+  if (game.trump) {
     totalPoints += getCardValue(game.trumpCard.rank);
-    game.trumpCard = null;
+    game.trump = null;
   }
 
   game.currentTrick.forEach(

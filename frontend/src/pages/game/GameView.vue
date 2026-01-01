@@ -1,7 +1,7 @@
 <template>
   <TooltipProvider>
     <div
-      class="flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-800 w-full min-h-screen text-white"
+      class="flex flex-col bg-linear-to-b from-emerald-950 via-emerald-900 to-emerald-800 w-full min-h-screen text-white"
     >
       <!-- Opponent Info -->
       <div class="flex sm:flex-row flex-col justify-between items-center gap-4 p-4 sm:p-8 w-full">
@@ -25,15 +25,16 @@
 
         <div class="flex items-center gap-4">
           <Badge
+            v-if="game.isMatch"
             variant="outline"
-            class="px-3 sm:px-6 py-1 sm:py-3 border-white/30 text-sm sm:text-xl"
+            class="px-3 sm:px-6 py-1 sm:py-3 border-white/30 text-white text-sm sm:text-xl"
           >
             Stake: {{ game.stake }} coins
           </Badge>
 
           <Badge
             variant="outline"
-            class="px-3 sm:px-6 py-1 sm:py-3 border-white/30 text-sm sm:text-xl"
+            class="px-3 sm:px-6 py-1 sm:py-3 border-white/30 text-white text-sm sm:text-xl"
           >
             Stock: {{ game.stockCount }}
           </Badge>
@@ -176,32 +177,62 @@
       </div>
 
       <!-- Your Hand -->
+      <!-- Your Hand -->
       <div class="flex flex-wrap justify-center gap-3 sm:gap-6 bg-black/40 p-4 sm:p-8 w-full">
-        <Tooltip v-for="card in game.myHand" :key="card.filename">
-          <TooltipTrigger as-child>
-            <Button
-              variant="ghost"
-              class="shadow-2xl p-0 rounded-xl overflow-hidden transition-all duration-200"
-              :class="[
-                game.isMyTurn
-                  ? 'hover:scale-110 cursor-pointer ring-4 ring-blue-500/70 scale-105'
-                  : 'opacity-60 cursor-not-allowed',
-                game.isMyTurn ? 'sm:hover:scale-125' : '',
-              ]"
-              :disabled="!game.isMyTurn"
-              @click="game.playCard(card)"
-            >
-              <img
-                :src="`/assets/cards/${card.filename}`"
-                class="rounded-lg w-16 sm:w-32 h-24 sm:h-48"
-                :alt="`${card.rankDisplay} of ${card.suit}`"
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {{ card.rankDisplay }} of {{ card.suit }} ({{ card.value }} points)
-          </TooltipContent>
-        </Tooltip>
+        <!-- Safe empty state — NO v-for here -->
+        <!-- <div v-if="game.myHand.length === 0" class="py-12 w-full text-center">
+          <div class="animate-pulse">
+            <p class="mb-2 text-gray-400 text-lg sm:text-2xl">Waiting for cards...</p>
+            <p class="text-gray-500 text-sm">
+              Game loading {{ game.status === 'playing' ? '...' : '' }}
+            </p>
+          </div>
+        </div> -->
+
+        <!-- Cards — Tooltip OUTSIDE v-for -->
+        <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
+          <Tooltip v-for="card in game.myHand" :key="`card-${card.filename}`">
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                class="relative shadow-2xl p-0 rounded-xl overflow-hidden transition-all duration-300"
+                :class="[
+                  // Base styles always
+                  'transition-opacity transition-filter duration-300',
+
+                  // When NOT your turn: locked appearance
+                  !game.isMyTurn
+                    ? 'opacity-60 grayscale cursor-not-allowed'
+                    : 'opacity-100 grayscale-0 cursor-pointer',
+
+                  // Hover effects — ONLY when it IS your turn
+                  game.isMyTurn
+                    ? 'hover:scale-110 sm:hover:scale-125 ring-4 ring-blue-500/70 scale-105'
+                    : 'hover:scale-100',
+                ]"
+                @click="game.isMyTurn ? game.playCard(card) : null"
+              >
+                <img
+                  :src="`/assets/cards/${card.filename}`"
+                  class="rounded-lg w-16 sm:w-32 h-24 sm:h-48 object-cover pointer-events-none"
+                  alt="Card"
+                />
+
+                <!-- Stronger lock overlay when not your turn -->
+                <div
+                  v-if="!game.isMyTurn"
+                  class="absolute inset-0 bg-black/50 rounded-xl pointer-events-none"
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" class="max-w-64">
+              <span class="font-semibold"
+                >{{ card.rank || 'Unknown' }} of {{ card.suit || 'Unknown' }}</span
+              >
+              <div class="opacity-90 mt-1 text-sm">{{ card.value || 0 }} points</div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       <!-- Game/Match Over Overlay -->

@@ -39,7 +39,6 @@ export function getOpenGames() {
       openGames.push(game);
     }
   }
-  console.log({ openGamesLength: openGames.length });
   return openGames;
 }
 
@@ -53,38 +52,57 @@ export function createGame({
   const fullDeck = shuffle(generateDeck());
   const size = HAND_SIZE[variant];
 
-  const hand1 = fullDeck.splice(0, size);
-  const hand2 = fullDeck.splice(0, size);
-
-  const trumpCard = fullDeck.pop();
-  const stock = fullDeck;
-
   const game = {
     id,
     variant,
-    // Use passed players (for matches) or default creator setup (for single games)
     players: players || {
       player1: { ...creator, disconnected: false },
       player2: null,
     },
     hands: {
-      player1: hand1,
-      player2: hand2,
+      player1: [], // ← Start empty
+      player2: [],
     },
-    stock,
-    trumpCard,
-    trumpSuit: trumpCard.suit,
+    stock: [],
+    trumpCard: null,
     currentTrick: [],
     turn: "player1",
     status: "waiting",
     points: { player1: 0, player2: 0 },
     timer: null,
-    matchId, // ← Now properly preserved from input!
-    isSinglePlayer: !players, // true if creator-only (lobby game), false for matches
+    matchId,
   };
 
+  // Deal only player1's hand immediately
+  if (game.players.player1) {
+    game.hands.player1 = fullDeck.splice(0, size);
+  }
+
+  // Leave the rest of the deck for later
+  // We'll deal player2 + trump + stock when game actually starts
+  game.stock = fullDeck;
+  game.hands.player2 = []; // ← empty
+  game.stock = fullDeck; // ← rest of deck
+  game.trumpCard = null;
   games.set(String(id), game);
   return game;
+}
+
+export function startGameProperly(game) {
+  if (game.status !== "waiting" && game.status !== "pending") return;
+  if (!game.players.player1 || !game.players.player2) return;
+
+  const size = HAND_SIZE[game.variant] || 6;
+
+  // Deal Player 2's hand from remaining stock
+  game.hands.player2 = game.stock.splice(0, size);
+
+  // Reveal trump
+  if (game.stock.length > 0) {
+    game.trumpCard = game.stock.pop();
+  }
+
+  game.status = "playing";
 }
 
 export function getGame(id) {

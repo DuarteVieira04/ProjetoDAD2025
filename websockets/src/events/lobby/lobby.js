@@ -4,7 +4,7 @@ import { emitOpenMatches } from "./match-lobby.js";
 export function emitOpenGames(io) {
   const games = getOpenGames().map((g) => ({
     gameId: g.id,
-    creator: g.creator,
+    creator: g.players.player1,
     variant: g.variant,
   }));
   console.log(`[Lobby] Emitting ${games.length} open games to 'lobby' room.`);

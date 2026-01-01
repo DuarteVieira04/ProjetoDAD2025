@@ -1,22 +1,18 @@
 // src/gameplay/match-progression.js
 import "dotenv/config";
-import { createGame } from "../../state/games.js";
+import { createGame, startGameProperly } from "../../state/games.js";
 
 import { startTurnTimer as startMatchTurnTimer } from "../timers/match-timers.js";
 import { endCurrentGame as endCurrentMatchGame } from "../timers/match-timers.js";
-import { endMatch } from "../../state/matches.js"; // CORRECT
+import { endMatch } from "../../state/matches.js";
 import axios from "axios";
 
 console.log("[MatchProgression] Loaded w/ corrected paths");
 
 export async function startGameInMatch(match, io) {
-  console.log(
-    "[MatchProgression] startGameInMatch CALLED for match:",
-    match.id
-  );
+  console.log(`[MatchProgression] Starting new game in match ${match.id}`);
 
   let gameId;
-
   try {
     const response = await axios.post(`${process.env.API_BASE_URL}/api/games`, {
       type: match.variant,
@@ -28,55 +24,82 @@ export async function startGameInMatch(match, io) {
     gameId = response.data.id;
     console.log(`[MatchProgression] API created game ${gameId}`);
   } catch (e) {
-    console.error("[MatchProgression] API failed, using temp ID", e.message);
+    console.error("[MatchProgression] API failed, using fallback ID");
     gameId = `game_${Date.now()}`;
   }
 
-  console.log("[MatchProgression] Creating local game object with ID:", gameId);
+  // Create game — but DO NOT deal player2 hand yet
   const game = createGame({
     id: gameId,
     variant: match.variant,
-    matchId: match.id, // Critical for match-timers.js
-    players: match.players,
+    matchId: match.id,
+    players: match.players, // both players exist
   });
 
+  // NOW deal player2 hand + reveal trump
+  startGameProperly(game); // ← This is critical!
+
+  // Set up game state
   match.currentGame = gameId;
   match.games.push(gameId);
 
   const firstTurn = Math.random() < 0.5 ? "player1" : "player2";
   game.turn = firstTurn;
-
-  console.log(`[MatchProgression] First turn set to: ${game.turn}`);
-
-  console.log("[MatchProgression] Emitting public gameStarted");
-  io.to(match.id).emit("gameStarted", {
-    matchId: match.id,
-    gameId,
-    trumpSuit: game.trumpSuit,
-    trumpCardFilename: game.trumpCard.filename,
-    stockSize: game.stock.length + (game.trumpCard ? 1 : 0),
-    firstTurn,
-  });
-
-  console.log("[MatchProgression] Sending private hands...");
-  sendPrivateData(io, match.id, match.players.player1.id, {
-    yourHand: game.hands.player1,
-    opponentHandSize: game.hands.player2.length,
-    youAre: "player1",
-  });
-  sendPrivateData(io, match.id, match.players.player2.id, {
-    yourHand: game.hands.player2,
-    opponentHandSize: game.hands.player1.length,
-    youAre: "player2",
-  });
-
   game.status = "playing";
   game.startTime = Date.now();
 
-  console.log(`[MatchProgression] Starting turn timer for ${firstTurn}`);
-  startMatchTurnTimer(game, io); // Uses match room automatically
+  // === BROADCAST PRIVATE HANDS TO EACH CONNECTED PLAYER ===
+  const roomSockets = io.sockets.adapter.rooms.get(match.id);
+  io.to(match.id).emit("gameStarted", {
+    matchId: match.id,
+    gameId,
+    trumpCard: game.trumpCard,
+    stockSize: game.stock.length + (game.trumpCard ? 1 : 0),
+    firstTurn,
+  });
+  if (!roomSockets) {
+    console.warn(`[MatchProgression] No sockets in match room ${match.id}`);
+  } else {
+    for (const socketId of roomSockets) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (!socket?.handshake?.auth?.id) continue;
 
-  console.log("[MatchProgression] New game fully live in match");
+      const userId = socket.handshake.auth.id;
+      console.log({ userId });
+      let role = null;
+      if (match.players.player1.id === userId) role = "player1";
+      else if (match.players.player2.id === userId) role = "player2";
+
+      if (!role) continue;
+
+      const opponentRole = role === "player1" ? "player2" : "player1";
+
+      socket.emit("gameStartedPrivate", {
+        matchId: match.id,
+        gameId: game.id,
+        yourHand: game.hands[role],
+        opponentHandSize: game.hands[opponentRole].length,
+        youAre: role,
+        opponentNickname: match.players[opponentRole].nickname,
+        trumpCard: game.trumpCard,
+        stockSize: game.stock.length + (game.trumpCard ? 1 : 0),
+        firstTurn: game.turn,
+      });
+
+      console.log(
+        `[MatchProgression] Sent hand to ${role} (${match.players[role].nickname})`
+      );
+    }
+  }
+
+  // Public game start info (for UI sync, spectators, etc.)
+
+  // Start the turn timer
+  startMatchTurnTimer(game, io);
+
+  console.log(
+    `[MatchProgression] Game ${gameId} fully started in match ${match.id}`
+  );
 }
 
 function sendPrivateData(io, roomId, userId, data) {

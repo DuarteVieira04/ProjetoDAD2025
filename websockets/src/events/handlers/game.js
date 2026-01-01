@@ -6,6 +6,7 @@ import {
 } from "../gameplay/gameplay.js";
 import { emitOpenGames } from "../lobby/lobby.js";
 import { endMatch, getMatch } from "../../state/matches.js";
+import { HAND_SIZE } from "../../constants/index.js";
 
 export function resignHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);
@@ -53,6 +54,7 @@ export function resignHandler(io, socket, user, gameId, callback) {
 export function createGameHandler(io, socket, user, variant = "9", callback) {
   const gameId = `game_${Date.now()}`;
   // Determine if single player (bot game)
+  console.log(`[createGameHandler] variant: ${variant}`);
   const isSinglePlayer = variant.toLowerCase().startsWith("bot");
   let normVariant = variant;
 
@@ -60,6 +62,7 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
     const parts = variant.split("-"); // e.g. "bot-3" or "bot-9"
     normVariant = parts[1] || "9";
   }
+  console.log(`[createGameHandler] normVariant: ${normVariant}`);
 
   const game = createGame({
     id: gameId,
@@ -75,35 +78,26 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
       disconnected: false,
       isBot: true,
     };
-    game.status = "playing";
-    game.startTime = Date.now();
 
-    // Determine random first turn
+    startGameProperly(game); // ← This deals player2 (bot) hand and sets trump
+
     const firstTurn = Math.random() < 0.5 ? "player1" : "player2";
     game.turn = firstTurn;
 
-    // Send gameStarted to creator (Player 1)
     socket.emit("gameStarted", {
       yourHand: game.hands.player1,
       opponentHandSize: game.hands.player2.length,
-      trumpSuit: game.trumpSuit,
-      trumpCardFilename: game.trumpCard ? game.trumpCard.filename : null,
+      trumpCard: game.trump,
       stockSize: game.stock.length + 1,
       youAre: "player1",
-      firstTurn: firstTurn,
-      opponentNickname: game.players.player2
-        ? game.players.player2.nickname
-        : null,
+      firstTurn,
+      opponentNickname: "Bot",
     });
 
-    // Start turn loop
-    if (game.turn === "player1") {
-      startTurnTimer(game, io);
+    if (game.turn === "player2") {
+      setTimeout(() => triggerBotMove(game, io), 1000);
     } else {
-      // Bot turn
-      setTimeout(() => {
-        triggerBotMove(game, io);
-      }, 1000);
+      startTurnTimer(game, io);
     }
   }
 
@@ -114,124 +108,130 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
   callback?.({ gameId });
 }
 
+export function startGameProperly(game) {
+  if (
+    game.status !== "waiting" ||
+    !game.players.player1 ||
+    !game.players.player2
+  )
+    return;
+
+  const size = HAND_SIZE[game.variant];
+
+  // Deal player2 hand
+  game.hands.player2 = game.stock.splice(0, size);
+
+  // Set trump and stock
+  game.trump = game.stock.pop();
+  // console.log(
+  //   `[TRUMP CARD ANALYSIS]: card: ${game.trump} suit: ${game.trumpSuit}`
+  // );
+  console.log({ trump: game.trump });
+  // Status to playing
+  game.status = "playing";
+  game.startTime = Date.now();
+}
+
+function getPlayerRole(game, user) {
+  if (game.players.player1?.id === user.id) return "player1";
+  if (game.players.player2?.id === user.id) return "player2";
+  return null;
+}
+
+function sendGameStarted(socket, game, playerRole) {
+  const opponentRole = playerRole === "player1" ? "player2" : "player1";
+  const yourHand = game.hands[playerRole];
+  const opponentHandSize = game.hands[opponentRole].length;
+  const opponentNickname = game.players[opponentRole]?.nickname || null;
+  const stockSize = game.stock.length + (game.trump ? 1 : 0);
+
+  socket.emit("gameStarted", {
+    yourHand,
+    opponentHandSize,
+    trumpCard: game.trump,
+    stockSize,
+    youAre: playerRole,
+    firstTurn: game.turn,
+    opponentNickname,
+  });
+}
+
+function getSocketsForPlayer(io, gameId, playerId) {
+  const roomSockets = io.sockets.adapter.rooms.get(gameId) || new Set();
+  return [...roomSockets]
+    .map((socketId) => io.sockets.sockets.get(socketId))
+    .filter((s) => s && s.handshake.auth?.id === playerId);
+}
+
 export function joinGameHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId);
-
   if (!game) return callback?.({ error: "Game not found" });
 
-  if (game.isSinglePlayer) {
-    if (game.players.player1?.id === user.id) {
-      // Rejoining own single player game
-      // Fall through to Player 1 logic
-    } else {
-      return callback?.({ error: "Cannot join a single player game" });
-    }
+  if (game.isSinglePlayer && game.players.player1?.id !== user.id) {
+    return callback?.({ error: "Cannot join a single player game" });
   }
 
-  // Prevent joining own game
-  console.log(
-    `[JoinGame] Checking P1 (${game.players.player1?.id} - ${typeof game.players
-      .player1?.id}) vs User (${user.id} - ${typeof user.id})`
-  );
+  const playerRole = getPlayerRole(game, user);
 
-  // Check if rejoining (Player 1)
-  if (game.players.player1?.id === user.id) {
-    console.log(`[JoinGame] P1 Rejoining: ${user.id}`);
+  if (playerRole) {
     socket.join(gameId);
-
-    // Send state to Player 1 (Creator)
-    console.log(`[JoinGame] Emitting gameStarted to P1...`);
-    socket.emit("gameStarted", {
-      yourHand: game.hands.player1,
-      opponentHandSize: game.hands.player2 ? game.hands.player2.length : 0,
-      trumpSuit: game.trumpSuit,
-      trumpCardFilename: game.trumpCard ? game.trumpCard.filename : null,
-      stockSize: game.stock.length + 1,
-      youAre: "player1",
-      firstTurn: game.turn,
-      opponentNickname: game.players.player2
-        ? game.players.player2.nickname
-        : null,
-    });
-
+    sendGameStarted(socket, game, playerRole);
     return callback?.({ success: true, isRejoin: true });
   }
 
-  // Check if rejoining (Player 2)
-  if (game.players.player2?.id === user.id) {
-    socket.join(gameId);
-    socket.emit("gameStarted", {
-      yourHand: game.hands.player2,
-      opponentHandSize: game.hands.player1.length,
-      trumpSuit: game.trumpSuit,
-      trumpCardFilename: game.trumpCard ? game.trumpCard.filename : null,
-      stockSize: game.stock.length + 1,
-      youAre: "player2",
-      firstTurn: game.turn,
-      opponentNickname: game.players.player1
-        ? game.players.player1.nickname
-        : null,
-    });
-    return callback?.({ success: true, isRejoin: true });
-  }
-
-  // Prevent joining if player2 is already assigned (and it's not me)
   if (game.players.player2 && game.players.player2.id) {
     return callback?.({ error: "Game already has a second player" });
   }
 
-  // Add the second player (New Join)
   game.players.player2 = {
     id: user.id,
     nickname: user.nickname,
     disconnected: false,
   };
 
-  // Update status
-  const isPlaying = game.players.player1 && game.players.player2;
-  game.status = isPlaying ? "playing" : "waiting";
-  if (isPlaying) {
-    game.startTime = Date.now();
-  }
-
   socket.join(gameId);
   emitOpenGames(io);
 
   io.to(gameId).emit("opponentJoined", { nickname: user.nickname });
 
-  // Determine random first turn
+  startGameProperly(game);
+
   const firstTurn = Math.random() < 0.5 ? "player1" : "player2";
   game.turn = firstTurn;
 
-  socket.broadcast.to(gameId).emit("gameStarted", {
-    yourHand: game.hands.player1,
-    opponentHandSize: game.hands.player2.length,
-    trumpSuit: game.trumpSuit,
-    trumpCardFilename: game.trumpCard ? game.trumpCard.filename : null,
-    stockSize: game.stock.length + 1,
-    youAre: "player1",
-    firstTurn: firstTurn,
-    opponentNickname: game.players.player2
-      ? game.players.player2.nickname
-      : null,
+  console.log({ hello_here: game.trump });
+  const commonData = {
+    trumpCard: game.trump,
+    stockSize: game.stock.length + (game.trump ? 1 : 0),
+    firstTurn,
+  };
+
+  const player1Sockets = getSocketsForPlayer(
+    io,
+    gameId,
+    game.players.player1.id
+  );
+  player1Sockets.forEach((s) => {
+    s.emit("gameStarted", {
+      ...commonData,
+      yourHand: game.hands.player1,
+      opponentHandSize: game.hands.player2.length,
+      youAre: "player1",
+      trumpCard: game.trump,
+      opponentNickname: user.nickname,
+    });
   });
 
   socket.emit("gameStarted", {
+    ...commonData,
     yourHand: game.hands.player2,
     opponentHandSize: game.hands.player1.length,
-    trumpSuit: game.trumpSuit,
-    trumpCardFilename: game.trumpCard ? game.trumpCard.filename : null,
-    stockSize: game.stock.length + 1,
     youAre: "player2",
-    firstTurn: game.turn,
-    opponentNickname: game.players.player1
-      ? game.players.player1.nickname
-      : null,
+    trumpCard: game.trump,
+    opponentNickname: game.players.player1.nickname,
   });
 
-  if (game.status === "playing") {
-    startTurnTimer(game, io);
-  }
+  startTurnTimer(game, io);
 
   callback?.({ success: true });
 }
