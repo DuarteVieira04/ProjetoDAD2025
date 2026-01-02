@@ -63,7 +63,7 @@ class GameController extends Controller
             'type' => 'required|in:3,9',
             'status' => 'required|in:Pending,Playing,Ended,Interrupted',
             'player1_user_id' => 'required|exists:users,id',
-            'player2_user_id' => 'required|exists:users,id',
+            'player2_user_id' => 'nullable|exists:users,id',
             'winner_user_id' => 'nullable|exists:users,id',
             'loser_user_id' => 'nullable|exists:users,id',
             'player1_points' => 'nullable|integer',
@@ -85,7 +85,7 @@ class GameController extends Controller
         // Check for debit if standalone multiplayer
         if ($validated['type'] == '3' || $validated['type'] == '9') {
             // Coin check logic
-            $user = $request->user();
+            $user = $request->user() ?? \App\Models\User::find($validated['player1_user_id']);
             if ($user && empty($validated['match_id'])) {
                 if ($user->coins_balance < 2) {
                     return response()->json(['error' => 'Insufficient coins'], 400);
@@ -126,20 +126,49 @@ class GameController extends Controller
             return response()->json($game);
         }
 
+        // Logic for Player 2 Joining (Transition from Pending -> Playing)
+        if ($game->status === 'Pending' && $request->has('player2_user_id') && !$game->player2_user_id) {
+            $user = \App\Models\User::find($request->input('player2_user_id'));
+
+            // Validate P2 Balance for standalone games
+            if ($game->match_id === null && ($game->type == '3' || $game->type == '9')) {
+                if ($user && $user->coins_balance < 2) {
+                    return response()->json(['error' => 'Insufficient coins'], 400);
+                }
+
+                if ($user) {
+                    $user->coins_balance -= 2;
+                    $user->save();
+
+                    \App\Models\CoinTransactions::create([
+                        'transaction_datetime' => now(),
+                        'user_id' => $user->id,
+                        'game_id' => $game->id,
+                        'coin_transaction_type_id' => 3, // Game fee
+                        'coins' => -2,
+                    ]);
+                }
+            }
+        }
+
         $validated = $request->validate([
-            'status' => 'required|in:Ended,Interrupted',
+            // Relax validation for partial updates or status changes
+            'status' => 'sometimes|in:Playing,Ended,Interrupted',
             'winner_user_id' => 'nullable|exists:users,id',
             'loser_user_id' => 'nullable|exists:users,id',
-            'player1_points' => 'required|integer',
-            'player2_points' => 'required|integer',
+            'player2_user_id' => 'sometimes|exists:users,id',
+            'player1_points' => 'nullable|integer',
+            'player2_points' => 'nullable|integer',
             'is_draw' => 'boolean',
             'total_time' => 'nullable|integer',
+            'began_at' => 'nullable|date',
         ]);
 
-        $game->update(array_merge($validated, ['ended_at' => now()]));
+        $game->update(array_merge($validated, ['ended_at' => ($request->status === 'Ended' ? now() : $game->ended_at)]));
+        $game->refresh();
 
         // Handle Standalone Payouts
-        if ($game->match_id === null && $validated['status'] === 'Ended') {
+        if ($game->match_id === null && $game->status === 'Ended') {
             $this->processGamePayout($game);
         }
 
@@ -160,9 +189,12 @@ class GameController extends Controller
 
             $reward = 3; // Basic win
             if ($points == 120)
-                $reward = 6;
+                $reward = 6; // Bandeira
             else if ($points >= 91)
-                $reward = 4;
+                $reward = 4; // Capote
+
+            // Log output for debugging
+            \Log::info("Game {$game->id} Ended. Winner: {$game->winner_user_id}, Points: {$points}, Reward: {$reward}");
 
             $this->creditUser($game->winner_user_id, $reward, $game->id, 'Game payout');
         }

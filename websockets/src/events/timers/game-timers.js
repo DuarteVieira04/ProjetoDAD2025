@@ -16,6 +16,8 @@ export function startTurnTimer(game, io) {
 
   console.log(`[GameTimer] Starting turn for ${game.turn} → room ${roomId}`)
 
+  game.turnStartTime = Date.now()
+
   game.timer = setTimeout(() => {
     console.log(`[GameTimer] ${game.turn} timed out in game ${roomId}`)
     const loser = game.turn

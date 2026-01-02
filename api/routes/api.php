@@ -75,8 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/leaderboards/personal', [StatisticsController::class, 'getPersonalLeaderboard']);
 });
 
-Route::get('/matches', [MatchController::class, 'list']);
-Route::put('/matches/{match}', [MatchController::class, 'update']);
+Route::apiResource('matches', MatchController::class);
 
 Route::apiResource('games', GameController::class);
 

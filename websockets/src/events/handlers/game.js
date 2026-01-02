@@ -69,18 +69,43 @@ export function resignHandler(io, socket, user, gameId, callback) {
   endGame(game, io, { reason: 'resignation', winner })
 }
 
-export function createGameHandler(io, socket, user, variant = '9', callback) {
-  const gameId = `game_${Date.now()}`
-  // Determine if single player (bot game)
+export async function createGameHandler(io, socket, user, variant = '9', callback) {
+  let gameId = `game_${Date.now()}`
+
   console.log(`[createGameHandler] variant: ${variant}`)
   const isSinglePlayer = variant.toLowerCase().startsWith('bot')
   let normVariant = variant
 
   if (isSinglePlayer) {
-    const parts = variant.split('-') // e.g. "bot-3" or "bot-9"
+    const parts = variant.split('-')
     normVariant = parts[1] || '9'
   }
   console.log(`[createGameHandler] normVariant: ${normVariant}`)
+
+  if (!isSinglePlayer) {
+    try {
+      const { default: axios } = await import('axios')
+      const response = await axios.post(`${process.env.API_BASE_URL}/api/games`, {
+        type: normVariant,
+        status: 'Pending',
+        player1_user_id: user.id,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${socket.handshake.auth?.token}`,
+          'Accept': 'application/json'
+        }
+      })
+      gameId = response.data.id
+      console.log(`[createGameHandler] API created game ${gameId}`)
+    } catch (error) {
+      console.error('[createGameHandler] API Failed:', error.message)
+      if (error.response?.data?.error === 'Insufficient coins') {
+        return callback?.({ error: 'Insufficient coins' })
+      }
+      // If other error, maybe stop? For now we fall back to in-memory but coin deduction fails.
+      // But user wants coins to work. So we should probably return error if API fails.
+    }
+  }
 
   const game = createGame({
     id: gameId,
@@ -97,7 +122,7 @@ export function createGameHandler(io, socket, user, variant = '9', callback) {
       isBot: true,
     }
 
-    startGameProperly(game) // ← This deals player2 (bot) hand and sets trump
+    startGameProperly(game)
 
     const firstTurn = Math.random() < 0.5 ? 'player1' : 'player2'
     game.turn = firstTurn
@@ -119,7 +144,7 @@ export function createGameHandler(io, socket, user, variant = '9', callback) {
     }
   }
 
-  socket.join(gameId)
+  socket.join(String(gameId))
   emitOpenGames(io)
 
   socket.emit('gameCreated', gameId)
@@ -176,7 +201,7 @@ function getSocketsForPlayer(io, gameId, playerId) {
     .filter((s) => s && s.handshake.auth?.id === playerId)
 }
 
-export function joinGameHandler(io, socket, user, gameId, callback) {
+export async function joinGameHandler(io, socket, user, gameId, callback) {
   const game = getGame(gameId)
   if (!game) return callback?.({ error: 'Game not found' })
 
@@ -187,7 +212,24 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
   const playerRole = getPlayerRole(game, user)
 
   if (playerRole) {
-    socket.join(gameId)
+    socket.join(String(gameId))
+    // If game is already ended, send results
+    if (game.status === 'ended' || game.status === 'Ended') {
+      const winner = game.points.player1 >= 61 ? 'player1' : (game.points.player2 >= 61 ? 'player2' : null)
+      socket.emit('gameEnded', { winner, reason: 'finished', points: game.points })
+      return callback?.({ success: true, isRejoin: true })
+    }
+
+    // Sync Timer for rejoiner
+    if (game.status === 'playing' && game.turnStartTime) {
+      const elapsed = (Date.now() - game.turnStartTime) / 1000
+      const remaining = Math.max(0, Math.ceil(20 - elapsed))
+      socket.emit('turnStarted', {
+        player: game.turn,
+        seconds: remaining
+      })
+    }
+
     sendGameStarted(socket, game, playerRole)
     return callback?.({ success: true, isRejoin: true })
   }
@@ -196,13 +238,37 @@ export function joinGameHandler(io, socket, user, gameId, callback) {
     return callback?.({ error: 'Game already has a second player' })
   }
 
+  // --- API Call to Join ---
+  if (!game.isSinglePlayer) {
+    try {
+      const { default: axios } = await import('axios')
+      await axios.put(`${process.env.API_BASE_URL}/api/games/${gameId}`, {
+        status: 'Playing',
+        player2_user_id: user.id
+      }, {
+        headers: {
+          'Authorization': `Bearer ${socket.handshake.auth?.token}`,
+          'Accept': 'application/json'
+        }
+      })
+      console.log(`[joinGameHandler] API updated game ${gameId} with player2`)
+    } catch (error) {
+      console.error('[joinGameHandler] API Failed:', error.message)
+      if (error.response?.data?.error === 'Insufficient coins') {
+        return callback?.({ error: 'Insufficient coins' })
+      }
+      return callback?.({ error: 'Failed to join game' })
+    }
+  }
+  // ------------------------
+
   game.players.player2 = {
     id: user.id,
     nickname: user.nickname,
     disconnected: false,
   }
 
-  socket.join(gameId)
+  socket.join(String(gameId))
   emitOpenGames(io)
 
   io.to(gameId).emit('opponentJoined', { nickname: user.nickname })

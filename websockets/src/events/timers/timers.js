@@ -12,13 +12,15 @@ export function startTurnTimer(game, io) {
   }
 
   // Use match room if in a match, fallback to game ID
-  const roomId = game.matchId || game.id
+  const roomId = String(game.matchId || game.id)
   if (!roomId) {
     console.error('[TurnTimer] No room ID available for game:', game.id)
     return
   }
 
   console.log(`[TurnTimer] Starting turn for ${game.turn} → room ${roomId}`)
+
+  game.turnStartTime = Date.now()
 
   game.timer = setTimeout(() => {
     console.log(`[Timer] ${game.turn} timed out in ${roomId}`)
@@ -42,7 +44,7 @@ export function endGame(game, io, extra = {}) {
   }
 
   // Use match room if in a match, fallback to game ID
-  const roomId = game.matchId || game.id
+  const roomId = String(game.matchId || game.id)
   if (!roomId) {
     console.error('[endGame] No room ID available for game:', game.id)
     return
