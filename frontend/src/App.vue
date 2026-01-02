@@ -2,9 +2,7 @@
   <Toaster richColors />
 
   <!-- Full-Width Header -->
-  <header
-    class="bg-background/95 supports-[backdrop-filter]:bg-background/60 backdrop-blur border-b"
-  >
+  <header class="bg-background/95 supports-backdrop-filter:bg-background/60 backdrop-blur border-b">
     <div class="flex flex-row items-center px-4 md:px-8 w-full h-16">
       <!-- Left: Logo / Page Title + User Name -->
       <div class="flex items-center gap-2 font-semibold text-xl">
@@ -12,7 +10,9 @@
           {{ pageTitle }}
         </RouterLink>
         <p v-if="authStore.currentUser" class="font-normal text-muted-foreground text-sm">
-          ({{ authStore.currentUser?.name }})
+          <RouterLink to="/profile" class="flex items-center gap-2 hover:opacity-80 transition">
+            ({{ authStore.currentUser?.name }})
+          </RouterLink>
         </p>
       </div>
       <div class="flex flex-1 justify-end text-end">
@@ -45,8 +45,8 @@ const authStore = useAuthStore()
 
 const socketStore = useSocketStore()
 
-const year = new Date().getFullYear()
-const pageTitle = ref(`DAD ${year}/${String(year + 1).slice(-2)}`)
+// const year = new Date().getFullYear()
+const pageTitle = ref(`Projeto DAD - Bisca`)
 
 const logout = () => {
   toast.promise(authStore.logout(), {
@@ -54,7 +54,8 @@ const logout = () => {
     success: () => {
       return 'Logout Successful '
     },
-    error: (data) => `[API] Error logging out - ${data?.response?.data?.message || data?.message || 'Unknown error'}`,
+    error: (data) =>
+      `[API] Error logging out - ${data?.response?.data?.message || data?.message || 'Unknown error'}`,
   })
 }
 

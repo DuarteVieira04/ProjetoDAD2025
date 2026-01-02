@@ -177,17 +177,13 @@ export const useGameStore = defineStore('game', () => {
 
   on('opponentJoined', ({ nickname }) => {
     opponentNickname.value = nickname
-    console.log('[GameStore] Opponent joined:', nickname)
   })
 
   on('matchStarted', ({ stake: matchStake }) => {
     stake.value = matchStake
-    console.log('[GameStore] Match started with stake:', matchStake)
   })
 
   on('gameStarted', (data) => {
-    console.log('[GameStore] Public gameStarted received:', data)
-
     opponentHandCount.value = data.opponentHandSize || 0
     stockCount.value = data.stockSize || 40
     trumpCard.value = data.trumpCard
@@ -200,42 +196,22 @@ export const useGameStore = defineStore('game', () => {
 
   // In your socket listener setup (probably in useGameStore or socket init)
   on('gameStartedPrivate', (data) => {
-    console.log('[GameStore] Private gameStartedPrivate received:', data)
-
     if (!data || !data.youAre) {
       console.warn('[GameStore] Invalid gameStartedPrivate payload')
       return
     }
 
-    // Core role & status
     youAre.value = data.youAre
-    // gameId.value = data.gameId
-    // currentMatchId.value = data.matchId || null
-
-    // === YOUR HAND ===
-    console.log(data.yourHand)
     myHand.value = data.yourHand
-    console.log(`[GameStore] Hand set & sorted: ${myHand.value.length} cards`)
-
-    // === OPPONENT ===
     opponentHandCount.value = data.opponentHandSize
     opponentNickname.value = data.opponentNickname || 'Opponent'
-
-    // === TRUMP CARD (THIS WAS MISSING!) ===
     trumpCard.value = data.trumpCard
-
-    // === STOCK ===
     stockCount.value = Number(data.stockSize) || 0
-
-    // === TURN ===
     isMyTurn.value = data.firstTurn === data.youAre
     status.value = 'playing'
-
-    console.log('[GameStore] All game state updated — UI should now show hand, trump, and fan')
   })
 
   on('turnStarted', ({ player, seconds = 20 }) => {
-    console.log(`TURNSTARTED: ${player}`)
     isMyTurn.value = player === youAre.value
     timerSeconds.value = seconds
     turnTimeLimit.value = seconds

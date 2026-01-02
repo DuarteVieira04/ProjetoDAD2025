@@ -1,7 +1,8 @@
 <template>
   <div class="space-y-6 mx-auto p-6 max-w-lg">
-
-    <Button class="w-full" variant="outline" @click="$router.push('/shop/history')">View Coin Transaction History</Button>
+    <Button class="w-full" variant="outline" @click="$router.push('/shop/history')"
+      >View Coin Transaction History</Button
+    >
     <Card>
       <CardHeader>
         <CardTitle>Purchase Coins</CardTitle>
@@ -23,25 +24,31 @@
 
           <label class="block">
             Reference
-            <input 
-              v-model="payment.reference" 
-              type="text" 
+            <input
+              v-model="payment.reference"
+              type="text"
               class="p-2 border rounded w-full"
               :placeholder="paymentText"
               :maxlength="paymentMaxLength"
               @input="validateReference"
               required
             />
-            <p v-if="referenceError" class="text-red-500 text-sm mt-1">{{ referenceError }}</p>
+            <p v-if="referenceError" class="mt-1 text-red-500 text-sm">{{ referenceError }}</p>
           </label>
 
           <label class="block">
             Amount (€)
-            <input v-model.number="payment.value" type="number" min="1" max="99" class="p-2 border rounded w-full" />
+            <input
+              v-model.number="payment.value"
+              type="number"
+              min="1"
+              max="99"
+              class="p-2 border rounded w-full"
+            />
           </label>
 
-          <label class="block text-sm italic text-gray-500 pl-2">
-            Each euro gives you 10 coins. 
+          <label class="block pl-2 text-gray-500 text-sm italic">
+            Each euro gives you 10 coins.
           </label>
 
           <Button @click="submitPurchase" :loading="loading">Buy Coins</Button>
@@ -59,6 +66,7 @@ import { ref, computed } from 'vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useAuthStore } from '@/stores/auth'
 
 const transactionsStore = useTransactionsStore()
 
@@ -84,7 +92,6 @@ const paymentText = computed(() => {
       return 'Enter your reference'
   }
 })
-
 
 const paymentPattern = computed(() => {
   switch (payment.value.type) {
@@ -128,11 +135,14 @@ const validateReference = () => {
   }
 
   const patterns = {
-    'MBWAY': { regex: /^9[0-9]{0,8}$/, message: 'Must be 9 digits starting with 9' },
-    'PAYPAL': { regex: /^[a-zA-Z0-9._%+-]*@?[a-zA-Z0-9.-]*\.?[a-zA-Z]*$/, message: 'Must be a valid email' },
-    'IBAN': { regex: /^[A-Z]{0,2}[0-9]{0,23}$/, message: 'Must be 2 letters followed by 23 digits' },
-    'MB': { regex: /^[0-9]{0,5}-?[0-9]{0,9}$/, message: 'Must be 5 digits, hyphen, and 9 digits' },
-    'VISA': { regex: /^4[0-9]{0,15}$/, message: 'Must be 16 digits starting with 4' }
+    MBWAY: { regex: /^9[0-9]{0,8}$/, message: 'Must be 9 digits starting with 9' },
+    PAYPAL: {
+      regex: /^[a-zA-Z0-9._%+-]*@?[a-zA-Z0-9.-]*\.?[a-zA-Z]*$/,
+      message: 'Must be a valid email',
+    },
+    IBAN: { regex: /^[A-Z]{0,2}[0-9]{0,23}$/, message: 'Must be 2 letters followed by 23 digits' },
+    MB: { regex: /^[0-9]{0,5}-?[0-9]{0,9}$/, message: 'Must be 5 digits, hyphen, and 9 digits' },
+    VISA: { regex: /^4[0-9]{0,15}$/, message: 'Must be 16 digits starting with 4' },
   }
 
   const pattern = patterns[payment.value.type]
@@ -147,7 +157,7 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 const referenceError = ref('')
-
+const authStore = useAuthStore()
 
 const validateForm = () => {
   if (!payment.value.type) {
@@ -175,6 +185,7 @@ const submitPurchase = async () => {
 
   try {
     await transactionsStore.purchaseCoins(payment.value)
+    await authStore.fetchUserCoins()
     success.value = `Purchase successful! You received ${payment.value.value * 10} coins.`
   } catch (err) {
     error.value = err?.response?.data?.message || 'Error processing purchase'

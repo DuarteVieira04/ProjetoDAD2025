@@ -40,7 +40,9 @@ export const useProfileStore = defineStore('profile', () => {
         const response = await adminStore.getUserDetails(userId)
         displayedUser.value = response
       } else {
+        const coins = await authStore.fetchUserCoins()
         displayedUser.value = authStore.currentUser
+        displayedUser.value.coins_balance = coins
       }
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to load user profile.'

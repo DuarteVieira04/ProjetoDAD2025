@@ -17,12 +17,10 @@ export const useLobbyStore = defineStore('lobby', () => {
 
   // Setup listeners
   on('openGamesUpdated', (games) => {
-    // console.log({ games })
     openGames.value = games
   })
 
   on('openMatchesUpdated', (matches) => {
-    // console.log({ matches })
     openMatches.value = matches
   })
 
@@ -37,18 +35,14 @@ export const useLobbyStore = defineStore('lobby', () => {
 
   const createMatch = async (variant, stake) => {
     try {
-      // 1. Create via API (handles money deduction)
       const res = await apiStore.createMatch(variant, stake)
       const matchesResponse = res.data
       const matchObj = matchesResponse.match || matchesResponse.data || matchesResponse
-
-      console.log('Lobby: createMatch: API success, match ID:', matchObj.id)
 
       if (!matchObj.id) {
         throw new Error('API returned match without ID')
       }
 
-      // 2. Notify Socket (creates room/state)
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('WebSocket timed out waiting for server response'))
@@ -63,7 +57,6 @@ export const useLobbyStore = defineStore('lobby', () => {
           },
           (socketRes) => {
             clearTimeout(timeout)
-            console.log('Lobby: createMatch: WebSocket response:', socketRes)
             if (socketRes && socketRes.error) reject(socketRes.error)
             else resolve({ matchId: matchObj.id })
           },
@@ -74,7 +67,7 @@ export const useLobbyStore = defineStore('lobby', () => {
       if (err.response && err.response.data && err.response.data.error) {
         throw new Error(err.response.data.error)
       }
-      throw err // propagate to UI
+      throw err
     }
   }
 

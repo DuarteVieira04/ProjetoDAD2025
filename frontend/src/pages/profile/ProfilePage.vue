@@ -12,7 +12,6 @@
         </CardDescription>
       </CardHeader>
 
-      <!-- Loading -->
       <CardContent v-if="profileStore.loading" class="py-12">
         <div class="flex flex-col items-center space-y-4">
           <div
@@ -22,7 +21,6 @@
         </div>
       </CardContent>
 
-      <!-- Error -->
       <CardContent v-else-if="profileStore.error" class="py-8 text-center">
         <p class="text-destructive">{{ profileStore.error }}</p>
       </CardContent>
@@ -65,7 +63,6 @@
                 <span class="font-medium text-white text-sm">Change Picture</span>
               </div>
 
-              <!-- Blocked Badge -->
               <div
                 v-if="profileStore.displayedUser.blocked"
                 class="-top-2 -right-2 absolute bg-destructive px-2 py-1 rounded-full font-medium text-destructive-foreground text-xs"
@@ -98,7 +95,6 @@
             </div>
           </div>
 
-          <!-- Details Grid -->
           <div class="gap-6 grid grid-cols-1 sm:grid-cols-2">
             <div>
               <p class="font-medium text-muted-foreground text-sm">User ID</p>
@@ -118,19 +114,17 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="flex sm:flex-row flex-col gap-4 pt-6 border-t">
-            <!-- Logout (only own profile) -->
-            <Button
-              v-if="!profileStore.isViewingAnotherUserAsAdmin"
-              @click="logout"
-              variant="destructive"
-            >
-              Logout
-            </Button>
+          <!-- Actions Section -->
+          <div class="space-y-6 pt-6 border-t">
+            <!-- Logout Button - Only for own profile -->
+            <div v-if="!profileStore.isViewingAnotherUserAsAdmin" class="w-full">
+              <Button @click="logout" variant="destructive" class="w-full sm:w-auto">
+                Logout
+              </Button>
+            </div>
 
-            <!-- Admin viewing another user's profile -->
-            <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="flex-1 space-y-4">
+            <!-- Admin Actions -->
+            <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="space-y-4">
               <p class="font-medium">Admin Actions</p>
               <div class="flex flex-wrap gap-3">
                 <Button
@@ -140,7 +134,6 @@
                   {{ profileStore.displayedUser.blocked ? 'Unblock User' : 'Block User' }}
                 </Button>
 
-                <!-- Admin Delete Button - Only for Players -->
                 <AlertDialog>
                   <AlertDialogTrigger as-child>
                     <Button
@@ -183,12 +176,12 @@
               </p>
             </div>
 
-            <!-- Own Profile: Self Delete with Password -->
+            <!-- Destructive Actions - Only for own profile (below Logout) -->
             <div v-else class="space-y-4">
               <p class="font-medium text-destructive">Destructive Actions</p>
               <AlertDialog>
                 <AlertDialogTrigger as-child>
-                  <Button variant="destructive">Delete Account</Button>
+                  <Button variant="destructive" class="w-full sm:w-auto"> Delete Account </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -235,7 +228,6 @@
           <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="space-y-4 pt-6 border-t">
             <h3 class="font-semibold text-lg">Coin Transaction History</h3>
 
-            <!-- Filters -->
             <div class="space-y-3">
               <label class="block font-semibold text-sm">Filter by Type</label>
               <div class="flex flex-wrap gap-2">
@@ -266,7 +258,6 @@
               </div>
             </div>
 
-            <!-- Table -->
             <div v-if="transactionsLoading" class="flex justify-center items-center py-8">
               <p class="text-muted-foreground">Loading transactions...</p>
             </div>
@@ -319,7 +310,6 @@
         </div>
       </CardContent>
 
-      <!-- Unauthorized -->
       <CardContent v-else class="py-8 text-center">
         <p class="text-muted-foreground">You are not authorized to view this profile.</p>
       </CardContent>
@@ -334,6 +324,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useAPIStore } from '@/stores/api'
+import { useAdminStore } from '@/stores/admin'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -350,7 +341,6 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog'
-import { useAdminStore } from '@/stores/admin'
 
 const route = useRoute()
 const router = useRouter()
@@ -375,7 +365,6 @@ const logout = () => {
   router.push('/login')
 }
 
-// Self-delete (regular user or admin deleting own account)
 const handleSelfDelete = async () => {
   if (!deletePassword.value) return
 
@@ -383,17 +372,14 @@ const handleSelfDelete = async () => {
   passwordError.value = ''
 
   try {
-    // Validate password by attempting login
     const credentials = {
       email: profileStore.displayedUser.email,
       password: deletePassword.value,
     }
     await apiStore.postLogin(credentials)
 
-    // If login succeeds → password is correct → delete own account
     await authStore.deleteUser()
 
-    // Full logout and redirect
     authStore.logout()
     router.push('/')
   } catch (_err) {
@@ -404,17 +390,15 @@ const handleSelfDelete = async () => {
   }
 }
 
-// Admin deleting a player account
 const handleAdminDelete = async () => {
   if (profileStore.displayedUser.type === 'A') return
 
   deleting.value = true
   try {
     await adminStore.deleteUser(profileStore.displayedUser.id)
-    router.push('/admin/users') // Adjust to your actual admin users route
+    router.push('/admin/users')
   } catch (err) {
     console.error('Failed to delete user:', err)
-    // Optionally show toast/error message
   } finally {
     deleting.value = false
   }

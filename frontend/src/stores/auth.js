@@ -27,7 +27,6 @@ export const useAuthStore = defineStore('auth', () => {
     const response = await apiStore.getAuthUser()
     const user = response.data
     if (user.photo_avatar_filename) {
-      console.log({ API_BASE_URL, type: typeof API_BASE_URL })
       const baseUrl = API_BASE_URL.replace('/api', '')
       user.avatar_url = `${baseUrl}/storage/photos_avatars/${user.photo_avatar_filename}`
     }
@@ -49,6 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiStore.getAuthUserCoinsBalance()
       userCoins.value = response.data.balance
+      return response.data.balance
     } catch (error) {
       console.error('Error fetching user coins:', error)
     }
