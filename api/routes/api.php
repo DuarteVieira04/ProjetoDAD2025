@@ -104,3 +104,5 @@ Route::get('/test-game-logic', function () {
         'marks_test_bandeira' => \App\Game\BiscaGameLogic::calculateMarks(120),  // Should be 4
     ]);
 });
+
+

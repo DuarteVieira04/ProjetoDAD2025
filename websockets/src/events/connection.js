@@ -5,11 +5,8 @@ import { playCardHandler } from './gameplay/gameplay.js'
 import { handleDisconnect, handleReconnect } from './reconnection.js'
 
 export function handleConnectionEvents(io, socket) {
-  const user = socket.handshake.auth || {}
-  if (!user.id) {
-    user.id = socket.id
-    user.nickname = user.nickname || 'Anonymous'
-  }
+  // User is already populated by server.js middleware
+  const user = socket.user
   console.log(`[Connection] User connected: ${user.nickname} (${user.id})`)
 
   // Lobby

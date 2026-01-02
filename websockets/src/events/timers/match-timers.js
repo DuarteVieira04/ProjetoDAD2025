@@ -16,13 +16,33 @@ export function startTurnTimer(game, io) {
 
   console.log(`[MatchTimer] Starting turn for ${game.turn} → match room ${roomId}`)
 
-  game.timer = setTimeout(() => {
+  game.timer = setTimeout(async () => {
     console.log(`[MatchTimer] ${game.turn} timed out in match room ${roomId}`)
     const loser = game.turn
     const winner = loser === 'player1' ? 'player2' : 'player1'
 
-    awardRemainingCardsToWinner(game, winner)
-    endCurrentGame(game, io, { reason: 'timeout', winner })
+    // Dynamically import to avoid circular dependency
+    const { handleMatchGameEnd } = await import('../gameplay/match-progression.js')
+    const { getMatch } = await import('../../state/matches.js')
+
+    // Retrieve the match object! (game.match is undefined)
+    const match = getMatch(game.matchId)
+    if (match) {
+      // Properly end the game logic (card award happens inside specific handlers or here?)
+      // awardRemainingCardsToWinner(game, winner) <-- This is usually for play-out
+      // For timeout, we might just want to award points or forfeit?
+      // User log showed: [Forfeit] Awarded 118 points.
+      // So awardRemainingCardsToWinner IS needed.
+
+      const { awardRemainingCardsToWinner } = await import('../gameplay/gameplay.js')
+      awardRemainingCardsToWinner(game, winner)
+
+      // Call the MAIN match progression handler
+      handleMatchGameEnd(match, game, io, { winner, reason: 'timeout' })
+    } else {
+      console.error('[MatchTimer] Could not find match object for timeout:', game.matchId)
+      endCurrentGame(game, io, { reason: 'timeout', winner })
+    }
   }, TIMER_SECONDS * 1000)
 
   io.to(roomId).emit('turnStarted', {

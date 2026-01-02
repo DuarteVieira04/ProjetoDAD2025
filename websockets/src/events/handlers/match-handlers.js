@@ -21,7 +21,7 @@ export function createMatchHandler(io, socket, user, { matchId, variant, stake }
 }
 
 // JOIN MATCH
-export function joinMatchHandler(io, socket, user, matchId, callback) {
+export async function joinMatchHandler(io, socket, user, matchId, callback) {
   const match = getMatch(matchId)
   if (!match) return callback?.({ error: 'Match not found' })
 
@@ -32,6 +32,22 @@ export function joinMatchHandler(io, socket, user, matchId, callback) {
   }
 
   if (match.players.player2) return callback?.({ error: 'Match full' })
+
+  // Call API to deduct coins and update DB
+  try {
+    const { default: axios } = await import('axios')
+    await axios.post(`${process.env.API_BASE_URL}/api/matches/${matchId}/join`, {}, {
+      headers: {
+        // We need to act on behalf of the user?
+        // The API expects Auth token. But we don't have the user's raw token here unless we stored it on connection.
+        // Wait, socket.handshake.auth.token?
+        Authorization: `Bearer ${socket.handshake.auth.token}`
+      }
+    })
+  } catch (error) {
+    console.error('[MatchHandler] Join API failed:', error.response?.data || error.message);
+    return callback?.({ error: error.response?.data?.error || 'Failed to join match (check coins)' });
+  }
 
   // Add the second player
   match.players.player2 = {

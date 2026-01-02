@@ -13,12 +13,7 @@
         </p>
       </div>
       <div class="flex flex-1 justify-end text-end">
-        <NavBar
-          @logout="logout"
-          :userLoggedIn="authStore.isLoggedIn"
-          :isAdmin="authStore.isAdmin()"
-          :userCoins="authStore.userCoins"
-        />
+        <NavBar @logout="logout" />
       </div>
     </div>
   </header>

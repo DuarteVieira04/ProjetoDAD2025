@@ -91,25 +91,37 @@ class MatchController extends Controller
     public function join(Request $request, $matchId)
     {
         $match = Matches::findOrFail($matchId);
+        $user = $request->user();
+
+        // Check if user is ALREADY the joined player (Idempotency / Reconnect)
+        if ($match->player2_user_id === $user->id) {
+            return response()->json($match->fresh()->load(['player1', 'player2', 'games']));
+        }
 
         if ($match->status !== 'Pending' || $match->player2_user_id !== null) {
             return response()->json(['error' => 'Match not available'], 400);
         }
 
-        $user = $request->user();
-
         if ($user->coins_balance < $match->stake) {
             return response()->json(['error' => 'Insufficient coins'], 400);
         }
 
-        $match->player2_user_id = $user->id;
-        $match->status = 'Playing';
-        $match->save();
+        try {
+            \DB::transaction(function () use ($match, $user) {
+                // Lock for update? Or just optimistic
+                $match->player2_user_id = $user->id;
+                $match->status = 'Playing';
+                $match->save();
 
-        $this->debitStake($user, $match);
+                $this->debitStake($user, $match);
 
-        // Now start first game
-        $this->startNextGame($match);
+                // Now start first game
+                $this->startNextGame($match);
+            });
+        } catch (\Exception $e) {
+            \Log::error("Match Join Failed: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to process join'], 500);
+        }
 
         // Broadcast match started
         // broadcast(new MatchStarted($match->load(['player1', 'player2'])));
@@ -148,9 +160,13 @@ class MatchController extends Controller
         ]);
 
         $match->update(array_merge($validated, ['ended_at' => now()]));
+        $match->refresh(); // Ensure we have the latest data
+
+        \Log::info("Match Update: {$match->id} Status: {$match->status} Winner: {$match->winner_user_id}");
 
         // Handle Payouts if Ended normally
         if ($validated['status'] === 'Ended' && $match->winner_user_id) {
+            \Log::info("Processing Match Payout for {$match->id}");
             $this->processMatchPayout($match);
         }
 
@@ -170,13 +186,14 @@ class MatchController extends Controller
             $winner->coins_balance += $payout;
             $winner->save();
 
+            // Dynamic lookup for 'Match payout'
+            $typeId = \App\Models\CoinTransactionsType::where('name', 'Match payout')->first()?->id ?? 6;
+
             CoinTransactions::create([
                 'transaction_datetime' => now(),
                 'user_id' => $winner->id,
                 'match_id' => $match->id,
-                'coin_transaction_type_id' => 6, // Match payout (Assuming ID 6 based on list order or name need to check seeder strictly but using guess based on prompt context 'Payout')
-                // Actually better to lookup by name to be safe
-                // 'coin_transaction_type_id' => \App\Models\CoinTransactionsType::where('name', 'Match payout')->first()?->id,
+                'coin_transaction_type_id' => $typeId,
                 'coins' => $payout,
                 'custom' => json_encode(['commission' => $commission])
             ]);
@@ -186,7 +203,7 @@ class MatchController extends Controller
     private function startNextGame(Matches $match)
     {
         $game = Game::create([
-            'type' => $match->type->value,  // since type is cast to GameEnum
+            'type' => $match->type,
             'player1_user_id' => $match->player1_user_id,
             'player2_user_id' => $match->player2_user_id,
             'match_id' => $match->id,
@@ -224,15 +241,15 @@ class MatchController extends Controller
     public function getUserHistory(Request $request)
     {
         $user = $request->user();
-        
+
         $matches = Matches::where(function ($query) use ($user) {
             $query->where('player1_user_id', $user->id)
-                  ->orWhere('player2_user_id', $user->id);
+                ->orWhere('player2_user_id', $user->id);
         })
-        ->where('status', 'Ended')
-        ->with(['player1', 'player2', 'games'])
-        ->orderBy('ended_at', 'desc')
-        ->paginate(20);
+            ->where('status', 'Ended')
+            ->with(['player1', 'player2', 'games'])
+            ->orderBy('ended_at', 'desc')
+            ->paginate(20);
 
         return response()->json($matches);
     }
@@ -261,7 +278,7 @@ class MatchController extends Controller
             ->findOrFail($matchId);
 
         $user = $request->user();
-        
+
         // Check if user is admin or participated in the match
         $isAdmin = $user && $user->type === 'A';
         $isParticipant = $user && ($match->player1_user_id == $user->id || $match->player2_user_id == $user->id);

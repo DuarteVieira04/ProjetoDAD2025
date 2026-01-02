@@ -6,8 +6,31 @@ import { endMatch, getMatch } from '../../state/matches.js'
 import { HAND_SIZE } from '../../constants/index.js'
 
 export function resignHandler(io, socket, user, gameId, callback) {
-  const game = getGame(gameId)
-  if (!game) return callback?.({ error: 'Game not found' })
+  let game = getGame(gameId)
+
+  if (!game) {
+    // Fallback: Check if gameId is actually a matchId (Match View sends matchId on resign)
+    const match = getMatch(gameId)
+    if (match) {
+      console.log(`[Resign] Player ${user.nickname} resigned directly from Match ${match.id}`)
+
+      let winner = null
+      if (match.players.player1?.id === user.id) winner = 'player2'
+      else if (match.players.player2?.id === user.id) winner = 'player1'
+
+      if (winner) {
+        match.marks[winner] = 4
+        // If a game is currently running inside this match, mark it ended too
+        if (match.currentGame) {
+          const currGame = getGame(match.currentGame)
+          if (currGame) currGame.status = 'ended'
+        }
+        endMatch(match, io, { winnerKey: winner, reason: 'forfeit' })
+        return
+      }
+    }
+    return callback?.({ error: 'Game not found' })
+  }
 
   let loser = null
   if (game.players.player1?.id === user.id) loser = 'player1'

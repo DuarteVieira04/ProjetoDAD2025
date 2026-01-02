@@ -216,10 +216,19 @@ import {
 } from '@/components/ui/navigation-menu'
 import { Button } from '@/components/ui/button'
 import { AlignJustify, X } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { computed, ref } from 'vue'
 
 const emit = defineEmits(['logout'])
 
+// Use store directly for reactivity
+const authStore = useAuthStore()
+
+const userLoggedIn = computed(() => authStore.isLoggedIn)
+const isAdmin = computed(() => authStore.isAdmin())
+const userCoins = computed(() => authStore.userCoins)
+
+/*
 defineProps({
   userLoggedIn: Boolean,
   isAdmin: Boolean,
@@ -228,6 +237,7 @@ defineProps({
     default: 0,
   },
 })
+*/
 
 const open = ref(false)
 
