@@ -5,7 +5,8 @@ import { inject, ref } from 'vue'
 export const useAPIStore = defineStore('api', () => {
   const API_BASE_URL = inject('apiBaseURL')
 
-  const token = ref(null)
+  // Initialize token from localStorage
+  const token = ref(localStorage.getItem('authToken'))
   if (token.value) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
   }
@@ -25,7 +26,7 @@ export const useAPIStore = defineStore('api', () => {
   // AUTH
   const setToken = (newToken) => {
     token.value = newToken
-    // localStorage.setItem('authToken', newToken)
+    localStorage.setItem('authToken', newToken)
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
   }
 
