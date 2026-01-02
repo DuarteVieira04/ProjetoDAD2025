@@ -79,7 +79,8 @@ const handleSubmit = async () => {
       router.push('/')
       return `Login Successful - ${data?.name}`
     },
-    error: (data) => `[API] Error logging in - ${data?.response?.data?.message || data?.message || 'Unknown error'}`,
+    error: (data) =>
+      `[API] Error logging in - ${data?.response?.data?.message || data?.message || 'Unknown error'}`,
   })
 }
 </script>

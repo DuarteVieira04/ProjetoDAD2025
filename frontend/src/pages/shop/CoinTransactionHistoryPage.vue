@@ -7,7 +7,6 @@
       </CardHeader>
 
       <CardContent class="space-y-6">
-        <!-- Filters -->
         <div class="space-y-3">
           <label class="block font-semibold text-sm">Filter by Type</label>
           <div class="flex flex-wrap gap-2">
@@ -15,9 +14,9 @@
               @click="selectedType = null"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                selectedType === null 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted hover:bg-muted/80'
+                selectedType === null
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80',
               ]"
             >
               All Transactions
@@ -28,22 +27,22 @@
               @click="selectedType = type"
               :class="[
                 'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                selectedType === type 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted hover:bg-muted/80'
+                selectedType === type
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted hover:bg-muted/80',
               ]"
             >
               {{ type }}
             </button>
           </div>
         </div>
-
-        <!-- Table -->
         <div v-if="loading" class="flex justify-center items-center py-8">
           <p class="text-muted-foreground">Loading...</p>
         </div>
-
-        <div v-else-if="!filteredTransactions || filteredTransactions.length === 0" class="py-8 text-center">
+        <div
+          v-else-if="!filteredTransactions || filteredTransactions.length === 0"
+          class="py-8 text-center"
+        >
           <p class="text-muted-foreground">No transactions found.</p>
         </div>
 
@@ -51,25 +50,30 @@
           <table class="w-full border-collapse">
             <thead>
               <tr class="border-b">
-                <th class="px-4 py-3 text-left font-semibold">Date</th>
-                <th class="px-4 py-3 text-left font-semibold">Transaction Type</th>
-                <th class="px-4 py-3 text-left font-semibold">Coins</th>
+                <th class="px-4 py-3 font-semibold text-left">Date</th>
+                <th class="px-4 py-3 font-semibold text-left">Transaction Type</th>
+                <th class="px-4 py-3 font-semibold text-left">Coins</th>
               </tr>
             </thead>
             <tbody>
-              <tr 
-                v-for="transaction in filteredTransactions" 
-                :key="transaction.id" 
-                class="border-b hover:bg-muted/50 transition-colors"
+              <tr
+                v-for="transaction in filteredTransactions"
+                :key="transaction.id"
+                class="hover:bg-muted/50 border-b transition-colors"
               >
                 <td class="px-4 py-3">{{ formatDate(transaction.transaction_datetime) }}</td>
                 <td class="px-4 py-3">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  <span
+                    class="inline-flex items-center bg-primary/10 px-2.5 py-0.5 rounded-full font-medium text-primary text-xs"
+                  >
                     {{ transaction.type?.name || 'Unknown' }}
                   </span>
                 </td>
                 <td class="px-4 py-3">
-                  <span :class="transaction.coins > 0 ? 'text-green-600' : 'text-red-600'" class="font-semibold">
+                  <span
+                    :class="transaction.coins > 0 ? 'text-green-600' : 'text-red-600'"
+                    class="font-semibold"
+                  >
                     {{ transaction.coins > 0 ? '+' : '' }}{{ transaction.coins }}
                   </span>
                 </td>
@@ -95,7 +99,7 @@ const loading = ref(true)
 
 const availableTypes = computed(() => {
   const types = new Set()
-  transactions.value.forEach(t => {
+  transactions.value.forEach((t) => {
     if (t.type?.name) {
       types.add(t.type.name)
     }
@@ -107,7 +111,7 @@ const filteredTransactions = computed(() => {
   if (!selectedType.value) {
     return transactions.value
   }
-  return transactions.value.filter(t => t.type?.name === selectedType.value)
+  return transactions.value.filter((t) => t.type?.name === selectedType.value)
 })
 
 const formatDate = (dateString) => {
@@ -117,7 +121,7 @@ const formatDate = (dateString) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }).format(date)
 }
 

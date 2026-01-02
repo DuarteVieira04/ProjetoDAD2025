@@ -1,8 +1,8 @@
 <script setup>
-import { reactiveOmit } from "@vueuse/core";
-import { NavigationMenuRoot, useForwardPropsEmits } from "reka-ui";
-import { cn } from "@/lib/utils";
-import NavigationMenuViewport from "./NavigationMenuViewport.vue";
+import { reactiveOmit } from '@vueuse/core'
+import { NavigationMenuRoot, useForwardPropsEmits } from 'reka-ui'
+import { cn } from '@/lib/utils'
+import NavigationMenuViewport from './NavigationMenuViewport.vue'
 
 const props = defineProps({
   modelValue: { type: String, required: false },
@@ -19,11 +19,11 @@ const props = defineProps({
   as: { type: null, required: false },
   class: { type: null, required: false },
   viewport: { type: Boolean, required: false, default: true },
-});
-const emits = defineEmits(["update:modelValue"]);
+})
+const emits = defineEmits(['update:modelValue'])
 
-const delegatedProps = reactiveOmit(props, "class", "viewport");
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const delegatedProps = reactiveOmit(props, 'class', 'viewport')
+const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
 
 <template>

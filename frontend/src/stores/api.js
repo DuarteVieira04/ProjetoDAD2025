@@ -1,11 +1,10 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { computed, inject, ref } from 'vue'
+import { inject, ref } from 'vue'
 
 export const useAPIStore = defineStore('api', () => {
   const API_BASE_URL = inject('apiBaseURL')
 
-  // Load token from localStorage on initialization
   const token = ref(null)
   if (token.value) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`

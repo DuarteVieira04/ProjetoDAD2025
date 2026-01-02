@@ -6,9 +6,9 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
   XIcon,
-} from "lucide-vue-next";
-import { Toaster as Sonner } from "vue-sonner";
-import { cn } from "@/lib/utils";
+} from 'lucide-vue-next'
+import { Toaster as Sonner } from 'vue-sonner'
+import { cn } from '@/lib/utils'
 
 const props = defineProps({
   id: { type: String, required: false },
@@ -32,7 +32,7 @@ const props = defineProps({
   swipeDirections: { type: Array, required: false },
   icons: { type: Object, required: false },
   containerAriaLabel: { type: String, required: false },
-});
+})
 </script>
 
 <template>

@@ -1,6 +1,5 @@
 <template>
   <div class="mx-auto p-4 max-w-4xl">
-    <!-- Loading -->
     <div v-if="matchStore.loading" class="py-12 text-muted-foreground text-center">
       <div
         class="inline-block border-primary border-t-2 border-b-2 rounded-full w-8 h-8 animate-spin"
@@ -8,13 +7,11 @@
       <p class="mt-4">Loading matches...</p>
     </div>
 
-    <!-- Error -->
     <div v-else-if="matchStore.error" class="py-12 text-center">
       <p class="font-medium text-red-600">Error loading matches</p>
       <p class="mt-2 text-muted-foreground text-sm">{{ matchStore.error }}</p>
     </div>
 
-    <!-- Matches List -->
     <ul v-else-if="matchStore.hasMatches" class="space-y-4">
       <li
         v-for="match in matchStore.getMatches"
@@ -23,9 +20,7 @@
       >
         <div class="p-5">
           <div class="flex justify-between items-center gap-6">
-            <!-- Left: Main Info -->
             <div class="flex flex-1 items-center gap-4 min-w-0">
-              <!-- Avatar placeholder -->
               <Avatar class="border-2 border-white/20 w-8 sm:w-14 h-8 sm:h-14">
                 <AvatarImage :src="match?.player1.avatar_url" />
                 <AvatarFallback>{{
@@ -56,8 +51,6 @@
                 </p>
               </div>
             </div>
-
-            <!-- Right: Join Button -->
             <div class="flex flex-col items-end">
               <button
                 @click="joinMatch(match)"
@@ -73,7 +66,6 @@
       </li>
     </ul>
 
-    <!-- Empty State -->
     <div v-else class="py-16 text-center">
       <div class="flex justify-center items-center bg-muted/50 mx-auto mb-6 rounded-full w-24 h-24">
         <svg

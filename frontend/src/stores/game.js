@@ -1,4 +1,3 @@
-// src/stores/useGameStore.js
 import { ref, inject, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'

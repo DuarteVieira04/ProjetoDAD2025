@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, onBeforeUnmount, reactive, ref } from 'vue'
+import { inject, onBeforeUnmount, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '@/stores/game'
 import { useAuthStore } from '@/stores/auth'
@@ -26,14 +26,10 @@ const socket = inject('socket')
 const isCreating = ref(false)
 const matchStake = ref(3)
 
-const userCoins = reactive({ value: 0 })
-
-// Attach listener early for the creator
 socket.once('gameCreated', (gameId) => {
   console.log('gameCreated received:', gameId)
   isCreating.value = false
 
-  // Creator is automatically player1
   game.gameId = gameId
   game.youAre = 'player1'
 
@@ -43,26 +39,6 @@ socket.once('gameCreated', (gameId) => {
 onBeforeUnmount(() => {
   socket.off('gameCreated')
 })
-
-const fetchUserCoins = async () => {
-  try {
-    const userId = authStore.user?.id
-    if (!userId) {
-      userCoins.value = 0
-      return
-    }
-    const response = await fetch(`/api/coins/balance/${userId}`)
-    const data = await response.json()
-    if (response.ok) {
-      userCoins.value = data.balance
-    } else {
-      console.error(data.message)
-    }
-  } catch (error) {
-    console.error('Error fetching user coins:', error)
-  }
-}
-
 
 const createNewGame = async (variant = '9') => {
   if (isCreating.value) return
@@ -106,8 +82,7 @@ const goToLogin = () => {
     </div>
 
     <div class="gap-4 grid grid-cols-1 md:grid-cols-2 w-full max-w-3xl">
-      <!-- Singleplayer Section -->
-      <Card class="flex flex-col border-2 shadow-sm hover:shadow-md transition-all overflow-hidden">
+      <Card class="flex flex-col shadow-sm hover:shadow-md border-2 overflow-hidden transition-all">
         <CardHeader class="pb-2">
           <CardTitle class="flex items-center gap-2 text-xl">
             🤖 Singleplayer
@@ -117,17 +92,17 @@ const goToLogin = () => {
             Play against our intelligent Bot. Perfect for practice.
           </CardDescription>
         </CardHeader>
-        <CardContent class="flex-1 flex flex-col justify-center gap-3 pt-4">
-          <Button 
-            @click="createNewGame('bot-9')" 
+        <CardContent class="flex flex-col flex-1 justify-center gap-3 pt-4">
+          <Button
+            @click="createNewGame('bot-9')"
             class="w-full h-12 text-sm"
             :disabled="isCreating"
           >
             Bisca de 9 (vs Bot)
           </Button>
-          <Button 
-            @click="createNewGame('bot-3')" 
-            variant="outline" 
+          <Button
+            @click="createNewGame('bot-3')"
+            variant="outline"
             class="w-full h-12 text-sm"
             :disabled="isCreating"
           >
@@ -136,12 +111,10 @@ const goToLogin = () => {
         </CardContent>
       </Card>
 
-      <!-- Multiplayer Section -->
-      <div class="relative flex flex-col h-full group">
-        <!-- Auth Overlay -->
-        <div 
-          v-if="!authStore.isLoggedIn" 
-          class="z-10 absolute inset-0 flex flex-col justify-center items-center bg-background/60 backdrop-blur-sm rounded-xl border-2"
+      <div class="group relative flex flex-col h-full">
+        <div
+          v-if="!authStore.isLoggedIn"
+          class="z-10 absolute inset-0 flex flex-col justify-center items-center bg-background/60 backdrop-blur-sm border-2 rounded-xl"
         >
           <Lock class="mb-3 w-8 h-8 text-muted-foreground" />
           <h3 class="mb-1 font-semibold text-lg">Login Required</h3>
@@ -149,8 +122,8 @@ const goToLogin = () => {
           <Button @click="goToLogin" size="sm">Log In</Button>
         </div>
 
-        <Card 
-          class="flex flex-col border-2 shadow-sm h-full overflow-hidden" 
+        <Card
+          class="flex flex-col shadow-sm border-2 h-full overflow-hidden"
           :class="{ 'opacity-50 pointer-events-none select-none': !authStore.isLoggedIn }"
         >
           <CardHeader class="pb-2">
@@ -162,17 +135,13 @@ const goToLogin = () => {
               Challenge other players in real-time matchups.
             </CardDescription>
           </CardHeader>
-          <CardContent class="grid grid-cols-1 gap-3 pt-4">
-            <Button 
-              @click="createNewGame('9')" 
-              class="w-full h-10 text-sm"
-              :disabled="isCreating"
-            >
+          <CardContent class="gap-3 grid grid-cols-1 pt-4">
+            <Button @click="createNewGame('9')" class="w-full h-10 text-sm" :disabled="isCreating">
               Start Bisca de 9 (PvP)
             </Button>
-            <Button 
-              @click="createNewGame('3')" 
-              variant="outline" 
+            <Button
+              @click="createNewGame('3')"
+              variant="outline"
               class="w-full h-10 text-sm"
               :disabled="isCreating"
             >
@@ -181,8 +150,8 @@ const goToLogin = () => {
 
             <Dialog>
               <DialogTrigger as-child>
-                <Button 
-                  class="w-full h-10 text-sm bg-black hover:bg-zinc-800 text-white"
+                <Button
+                  class="bg-black hover:bg-zinc-800 w-full h-10 text-white text-sm"
                   :disabled="isCreating"
                 >
                   Create Match (Stake)
@@ -206,30 +175,33 @@ const goToLogin = () => {
                     <p class="text-[0.8rem] text-muted-foreground">Min: 3, Max: 100</p>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-2 mt-2">
-                    <Button @click="handleCreateMatch('9')" class="w-full" size="lg"> Bisca 9 </Button>
-                    <Button @click="handleCreateMatch('3')" class="w-full" variant="outline" size="lg">
+                  <div class="gap-2 grid grid-cols-2 mt-2">
+                    <Button @click="handleCreateMatch('9')" class="w-full" size="lg">
+                      Bisca 9
+                    </Button>
+                    <Button
+                      @click="handleCreateMatch('3')"
+                      class="w-full"
+                      variant="outline"
+                      size="lg"
+                    >
                       Bisca 3
                     </Button>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
-            
+
             <div class="relative py-2">
-                <div class="absolute inset-0 flex items-center">
-                    <span class="w-full border-t" />
-                </div>
-                <div class="relative flex justify-center text-[10px] uppercase">
-                    <span class="bg-background px-2 text-muted-foreground">Or</span>
-                </div>
+              <div class="absolute inset-0 flex items-center">
+                <span class="border-t w-full" />
+              </div>
+              <div class="relative flex justify-center text-[10px] uppercase">
+                <span class="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
             </div>
 
-            <Button 
-              @click="goToLobby" 
-              variant="secondary" 
-              class="w-full h-10 text-sm"
-            >
+            <Button @click="goToLobby" variant="secondary" class="w-full h-10 text-sm">
               Browse Open Games (Lobby)
             </Button>
           </CardContent>

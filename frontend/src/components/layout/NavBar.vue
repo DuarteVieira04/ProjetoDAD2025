@@ -3,31 +3,13 @@
     <NavigationMenu class="hidden md:flex w-full">
       <div class="flex justify-end items-center px-4 md:px-8 w-full h-16">
         <NavigationMenuList class="flex items-center gap-6">
-          <!-- <NavigationMenuItem>
-            <NavigationMenuTrigger>Testing</NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul class="gap-3 grid p-4 md:w-[400px] lg:w-[500px]">
-                <li>
-                  <NavigationMenuLink as-child>
-                    <RouterLink to="/testing/laravel">Laravel</RouterLink>
-                  </NavigationMenuLink>
-                </li>
-                <li>
-                  <NavigationMenuLink as-child>
-                    <RouterLink to="/testing/websockets">Web Sockets</RouterLink>
-                  </NavigationMenuLink>
-                </li>
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem> -->
-
           <NavigationMenuItem v-if="isAdmin">
             <NavigationMenuLink as-child>
               <RouterLink to="/admin">Admin</RouterLink>
             </NavigationMenuLink>
           </NavigationMenuItem>
 
-          <NavigationMenuItem>
+          <NavigationMenuItem v-if="userLoggedIn">
             <NavigationMenuLink>
               <span class="flex items-center cursor-default"> Coins: {{ userCoins }} </span>
             </NavigationMenuLink>
@@ -132,27 +114,29 @@
             <nav class="flex-1 p-6 overflow-y-auto">
               <ul class="space-y-6">
                 <li>
-                  <p class="mb-3 font-semibold text-foreground">Testing</p>
-                  <ul class="space-y-3 pl-4">
-                    <li>
-                      <RouterLink
-                        to="/testing/laravel"
-                        class="block text-muted-foreground hover:text-foreground transition-colors"
-                        @click="open = false"
-                      >
-                        Laravel
-                      </RouterLink>
-                    </li>
-                    <li>
-                      <RouterLink
-                        to="/testing/websockets"
-                        class="block text-muted-foreground hover:text-foreground transition-colors"
-                        @click="open = false"
-                      >
-                        Web Sockets
-                      </RouterLink>
-                    </li>
-                  </ul>
+                  <div class="space-y-3">
+                    <p class="font-semibold text-foreground">Leaderboards</p>
+                    <ul class="space-y-2 pl-4">
+                      <li>
+                        <RouterLink
+                          to="/leaderboards/global"
+                          class="block py-2 font-medium hover:text-foreground transition-colors"
+                          @click="open = false"
+                        >
+                          Global Leaderboard
+                        </RouterLink>
+                      </li>
+                      <li v-if="userLoggedIn">
+                        <RouterLink
+                          to="/leaderboards/personal"
+                          class="block py-2 font-medium hover:text-foreground transition-colors"
+                          @click="open = false"
+                        >
+                          My Leaderboard
+                        </RouterLink>
+                      </li>
+                    </ul>
+                  </div>
                 </li>
 
                 <li v-if="isAdmin">
@@ -182,6 +166,16 @@
                     @click="open = false"
                   >
                     Match History
+                  </RouterLink>
+                </li>
+
+                <li v-if="userLoggedIn">
+                  <RouterLink
+                    to="/shop"
+                    class="block py-2 font-medium hover:text-foreground transition-colors"
+                    @click="open = false"
+                  >
+                    Shop
                   </RouterLink>
                 </li>
 

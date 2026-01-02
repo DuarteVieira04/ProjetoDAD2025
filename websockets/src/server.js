@@ -1,19 +1,19 @@
-import { Server } from "socket.io";
-import { handleConnectionEvents } from "./events/connection.js";
+import { Server } from 'socket.io'
+import { handleConnectionEvents } from './events/connection.js'
 
 export const server = {
   io: null,
-};
+}
 
 export const serverStart = (port) => {
   server.io = new Server(port, {
     cors: {
-      origin: "*",
+      origin: '*',
     },
-  });
-  server.io.on("connection", (socket) => {
-    console.log("New connection:", socket.id);
+  })
+  server.io.on('connection', (socket) => {
+    console.log('New connection:', socket.id)
 
-    handleConnectionEvents(server.io, socket);
-  });
-};
+    handleConnectionEvents(server.io, socket)
+  })
+}

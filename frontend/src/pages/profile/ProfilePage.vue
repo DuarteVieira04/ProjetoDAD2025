@@ -114,16 +114,13 @@
             </div>
           </div>
 
-          <!-- Actions Section -->
           <div class="space-y-6 pt-6 border-t">
-            <!-- Logout Button - Only for own profile -->
             <div v-if="!profileStore.isViewingAnotherUserAsAdmin" class="w-full">
               <Button @click="logout" variant="destructive" class="w-full sm:w-auto">
                 Logout
               </Button>
             </div>
 
-            <!-- Admin Actions -->
             <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="space-y-4">
               <p class="font-medium">Admin Actions</p>
               <div class="flex flex-wrap gap-3">
@@ -176,7 +173,6 @@
               </p>
             </div>
 
-            <!-- Destructive Actions - Only for own profile (below Logout) -->
             <div v-else class="space-y-4">
               <p class="font-medium text-destructive">Destructive Actions</p>
               <AlertDialog>
@@ -223,8 +219,6 @@
               </AlertDialog>
             </div>
           </div>
-
-          <!-- Coin Transaction History (Admin Only) -->
           <div v-if="profileStore.isViewingAnotherUserAsAdmin" class="space-y-4 pt-6 border-t">
             <h3 class="font-semibold text-lg">Coin Transaction History</h3>
 

@@ -93,23 +93,6 @@ const paymentText = computed(() => {
   }
 })
 
-const paymentPattern = computed(() => {
-  switch (payment.value.type) {
-    case 'MBWAY':
-      return '^9[0-9]{8}$'
-    case 'PAYPAL':
-      return '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
-    case 'IBAN':
-      return '^[A-Z]{2}[0-9]{23}$'
-    case 'MB':
-      return '^[0-9]{5}-[0-9]{9}$'
-    case 'VISA':
-      return '^4[0-9]{15}$'
-    default:
-      return '.*'
-  }
-})
-
 const paymentMaxLength = computed(() => {
   switch (payment.value.type) {
     case 'MBWAY':

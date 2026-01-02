@@ -1,4 +1,3 @@
-// src/composables/useBiscaDeck.js
 import { ref, computed } from 'vue'
 import { dealCards } from '@/utils/deck.js'
 import { HAND_SIZES } from '@/constants/bisca.js'

@@ -36,14 +36,17 @@
                 <td class="px-2 py-2">
                   <span
                     :class="{
-                      'font-bold': (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
-                      italic: (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)'
+                      'font-bold':
+                        (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
+                      italic: (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
                     }"
                   >
                     {{ u.name || u.nickname || '(Anonymous User)' }}
                   </span>
                 </td>
-                <td class="px-2 py-2 whitespace-nowrap">{{ mode === 'game' ? u.game_wins : u.match_wins }}</td>
+                <td class="px-2 py-2 whitespace-nowrap">
+                  {{ mode === 'game' ? u.game_wins : u.match_wins }}
+                </td>
                 <td class="px-2 py-2">{{ u.capotes }}</td>
                 <td class="px-2 py-2">{{ u.bandeiras }}</td>
               </tr>
@@ -81,6 +84,8 @@ const fetch = async () => {
 
 onMounted(fetch)
 
-const displayedList = computed(() => (mode.value === 'game' ? topByGames.value : topByMatches.value))
+const displayedList = computed(() =>
+  mode.value === 'game' ? topByGames.value : topByMatches.value,
+)
 const metricLabel = computed(() => (mode.value === 'game' ? 'Game Wins' : 'Match Wins'))
 </script>

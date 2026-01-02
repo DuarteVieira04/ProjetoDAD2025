@@ -1,9 +1,9 @@
-import "dotenv/config";
-import { serverStart } from "./server.js";
+import 'dotenv/config'
+import { serverStart } from './server.js'
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
 
-serverStart(PORT);
+serverStart(PORT)
 
-console.log(`Socket.io server running on port ${PORT}`);
-console.log("Waiting for connections...");
+console.log(`Socket.io server running on port ${PORT}`)
+console.log('Waiting for connections...')

@@ -2,7 +2,6 @@
   <div class="space-y-6 p-6">
     <h1 class="font-semibold text-2xl">Users</h1>
 
-    <!-- Filters -->
     <div class="flex flex-wrap items-end gap-4">
       <div class="w-64">
         <Label>Search</Label>
@@ -44,7 +43,6 @@
       <Button @click="applyFilters">Apply</Button>
     </div>
 
-    <!-- Table -->
     <div class="border rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
@@ -93,7 +91,6 @@
       </Table>
     </div>
 
-    <!-- Pagination -->
     <div class="flex justify-between items-center">
       <p class="text-muted-foreground text-sm">
         Page {{ meta.current_page }} of {{ meta.last_page }} — {{ meta.total }} users

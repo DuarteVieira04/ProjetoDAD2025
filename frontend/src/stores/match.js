@@ -33,10 +33,6 @@ export const useMatchStore = defineStore('match', () => {
     }
   }
 
-  const joinMatch = async (match) => {
-    await axios.post(`${API_BASE_URL}/matches/${match.id}/join`)
-  }
-
   return {
     matches,
     loading,

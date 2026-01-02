@@ -1,7 +1,6 @@
 <template>
   <div class="flex justify-center items-center bg-muted/40 p-6 min-h-screen">
     <div class="space-y-6 w-full max-w-2xl">
-      <!-- Header Card -->
       <div class="bg-background shadow-sm p-6 border rounded-2xl">
         <div class="flex justify-between items-center">
           <div>
@@ -10,7 +9,6 @@
           </div>
 
           <div class="flex items-center">
-            <!-- Create Game Dialog -->
             <Dialog>
               <DialogTrigger as-child>
                 <button
@@ -36,8 +34,6 @@
                 </div>
               </DialogContent>
             </Dialog>
-
-            <!-- Create Match Dialog -->
             <Dialog>
               <DialogTrigger as-child>
                 <button
@@ -83,8 +79,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Open Games -->
       <div class="bg-background shadow-sm p-6 border rounded-2xl">
         <h2 class="mb-4 font-semibold text-lg">Open Games</h2>
 
@@ -114,8 +108,6 @@
           No open games right now. Create one to get started.
         </p>
       </div>
-
-      <!-- Open Matches -->
       <div class="bg-background shadow-sm p-6 border rounded-2xl">
         <h2 class="mb-4 font-semibold text-lg">Open Matches (4 Marks)</h2>
 
@@ -147,8 +139,6 @@
           No open matches right now.
         </p>
       </div>
-
-      <!-- Footer Hint -->
       <p class="text-muted-foreground text-xs text-center">
         Share your game link with friends or wait for someone to join.
       </p>

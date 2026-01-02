@@ -1,4 +1,4 @@
-import { getOpenMatches } from "../../state/matches.js";
+import { getOpenMatches } from '../../state/matches.js'
 
 export function emitOpenMatches(io) {
   const matches = getOpenMatches().map((m) => ({
@@ -6,6 +6,6 @@ export function emitOpenMatches(io) {
     creator: m.players.player1.nickname,
     variant: m.variant,
     stake: m.stake,
-  }));
-  io.to("lobby").emit("openMatchesUpdated", matches);
+  }))
+  io.to('lobby').emit('openMatchesUpdated', matches)
 }

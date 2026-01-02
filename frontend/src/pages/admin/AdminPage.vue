@@ -50,7 +50,7 @@ const fetchUsers = async (page = 1) => {
     meta.last_page = response.last_page
     meta.total = response.total
     meta.per_page = response.per_page
-  } catch (err) {
+  } catch (_err) {
     users.value = []
     meta.current_page = 1
     meta.last_page = 1

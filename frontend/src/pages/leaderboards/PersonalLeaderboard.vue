@@ -36,7 +36,9 @@
             <tbody>
               <tr class="border-t">
                 <td class="px-2 py-2">
-                  <span :class="{ 'font-bold italic': displayName === '(Anonymous User)' }">{{ displayName }}</span>
+                  <span :class="{ 'font-bold italic': displayName === '(Anonymous User)' }">{{
+                    displayName
+                  }}</span>
                 </td>
                 <td class="px-2 py-2 whitespace-nowrap">{{ data.game_wins }}</td>
                 <td class="px-2 py-2 whitespace-nowrap">{{ data.match_wins }}</td>
@@ -66,7 +68,7 @@ const error = ref(null)
 const raw = ref(null)
 const variant = ref('both')
 
-const displayName = computed(() => (data.value.name || data.value.nickname || '(Anonymous User)'))
+const displayName = computed(() => data.value.name || data.value.nickname || '(Anonymous User)')
 
 const fetch = async () => {
   loading.value = true
@@ -85,7 +87,11 @@ const fetch = async () => {
   } catch (err) {
     const serverData = err?.response?.data ?? raw.value
     console.error('Error fetching personal leaderboard', err, 'serverData=', serverData)
-    error.value = serverData?.message || serverData?.error || err.message || 'Error fetching personal leaderboard'
+    error.value =
+      serverData?.message ||
+      serverData?.error ||
+      err.message ||
+      'Error fetching personal leaderboard'
   } finally {
     loading.value = false
   }

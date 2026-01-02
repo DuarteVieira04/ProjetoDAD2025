@@ -8,7 +8,6 @@ export function useCoins(options = {}) {
   const coins = ref(0)
   let pollTimer = undefined
 
-
   const refresh = async () => {
     try {
       const response = await api.getAuthUserCoinsBalance()

@@ -33,6 +33,9 @@ const router = createRouter({
     {
       path: '/lobby',
       component: LobbyPage,
+      meta: {
+        requiresAuth: true,
+      },
     },
     {
       path: '/lobby/matches',

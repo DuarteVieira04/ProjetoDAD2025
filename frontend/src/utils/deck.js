@@ -1,5 +1,3 @@
-// src/utils/deck.js
-
 import {
   SUITS,
   RANKS,

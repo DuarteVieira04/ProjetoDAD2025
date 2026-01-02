@@ -7,11 +7,9 @@
       </p>
     </div>
 
-    <!-- Create Form Card -->
     <div class="bg-card shadow-sm border rounded-xl overflow-hidden">
       <div class="p-6 sm:p-8">
         <form @submit.prevent="createMatch" class="space-y-8">
-          <!-- Game Type -->
           <div class="space-y-3">
             <label class="font-medium text-sm">Game Type</label>
             <div class="gap-4 grid grid-cols-2">
@@ -38,7 +36,6 @@
             </div>
           </div>
 
-          <!-- Mode -->
           <div class="space-y-3">
             <label class="font-medium text-sm">Match Mode</label>
             <div class="gap-4 grid grid-cols-2">
@@ -88,7 +85,6 @@
             </div>
           </div>
 
-          <!-- Stake (only shows for Multi) -->
           <div v-if="form.mode === 'multi'" class="space-y-2">
             <label for="stake" class="font-medium text-sm">Stake Amount</label>
             <div class="relative">
@@ -110,7 +106,6 @@
             <p class="text-muted-foreground text-xs">Between $3 and $100. Winner takes all.</p>
           </div>
 
-          <!-- Current User Preview -->
           <div class="flex items-center gap-4 bg-muted/30 p-4 rounded-lg">
             <Avatar class="border-2 border-white/20 w-12 h-12">
               <AvatarImage :src="currentUser?.avatar_url" />
@@ -126,7 +121,6 @@
             </div>
           </div>
 
-          <!-- Submit Button -->
           <button
             type="submit"
             :disabled="isCreating"
@@ -144,7 +138,6 @@
       </div>
     </div>
 
-    <!-- Success Message -->
     <div
       v-if="successMessage"
       class="bg-green-100 dark:bg-green-900/30 mt-6 p-4 rounded-lg font-medium text-green-800 dark:text-green-200 text-center"

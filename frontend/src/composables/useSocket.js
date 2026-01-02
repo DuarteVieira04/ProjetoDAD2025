@@ -1,5 +1,4 @@
-// src/composables/useSocket.js
-import { inject, onMounted, onUnmounted } from 'vue'
+import { inject, onMounted } from 'vue'
 
 export function useSocket() {
   const socket = inject('socket')
@@ -23,14 +22,6 @@ export function useSocket() {
   onMounted(() => {
     socket.connect()
   })
-
-  // WARNING: removing all listeners on unmount breaks SPA navigation if the socket is shared.
-  // The next component (e.g. GameView) might need listeners that were just wiped by the previous one (e.g. Lobby).
-  /*
-  onUnmounted(() => {
-    removeAllListeners()
-  })
-  */
 
   return {
     socket,

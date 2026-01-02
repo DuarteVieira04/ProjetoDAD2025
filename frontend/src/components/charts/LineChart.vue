@@ -13,32 +13,24 @@ import {
   LineElement,
   PointElement,
   CategoryScale,
-  LinearScale
+  LinearScale,
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement,
-  CategoryScale,
-  LinearScale
-)
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
 defineProps({
   data: {
     type: Object,
-    required: true
+    required: true,
   },
   options: {
     type: Object,
     default: () => ({
       responsive: true,
-      maintainAspectRatio: false
-    })
-  }
+      maintainAspectRatio: false,
+    }),
+  },
 })
 </script>
 
