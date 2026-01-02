@@ -18,7 +18,7 @@ export const useAdminStore = defineStore('admin', () => {
   })
 
   const getAllUsers = async () => {
-    const token = localStorage.getItem('authToken')
+    // const token = localStorage.getItem('authToken')
 
     const filters = { ...userListQueryParams.value.filters, page: userListQueryParams.value.page }
 
@@ -30,9 +30,6 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/admin/users`, {
         params,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       })
 
       if (!response.data.data.length === 0) {

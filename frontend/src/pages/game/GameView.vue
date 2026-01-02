@@ -134,16 +134,63 @@
           </Tooltip>
 
           <div class="text-center">
-            <p class="mb-2 font-bold text-lg sm:text-4xl">
-              {{ game.isMyTurn ? 'Your Turn' : 'Opponent Thinking...' }}
+            <!-- 1. Waiting for opponent -->
+            <p
+              v-if="game.status === 'waiting'"
+              class="mb-6 font-semibold text-gray-300 text-lg sm:text-2xl animate-pulse"
+            >
+              Waiting for opponent to join...
             </p>
-            <Progress
-              :value="(game.timerSeconds / game.turnTimeLimit) * 100"
-              class="w-32 sm:w-80 h-3 sm:h-6"
-            />
-            <p class="mt-2 font-mono text-yellow-300 text-xl sm:text-3xl">
-              {{ game.timerSeconds }}s
-            </p>
+
+            <!-- 2. Game Finished: Show Winner (SAFE CHECK) -->
+            <div v-else-if="hasWinner" class="mb-8">
+              <p class="mb-4 font-bold text-2xl sm:text-4xl">
+                <span v-if="player1Wins" class="drop-shadow-lg text-green-400">
+                  {{ isPlayer1 ? 'You Win! 🎉' : 'Opponent Wins!' }}
+                </span>
+                <span v-else-if="player2Wins" class="drop-shadow-lg text-green-400">
+                  {{ isPlayer2 ? 'You Win! 🎉' : 'Opponent Wins!' }}
+                </span>
+              </p>
+            </div>
+
+            <!-- 3. In Progress: Turn + Timer -->
+            <div v-else>
+              <p
+                class="mb-4 font-bold text-2xl sm:text-4xl transition-all duration-300"
+                :class="{
+                  'text-green-400 drop-shadow-lg': game.isMyTurn,
+                  'text-orange-400': !game.isMyTurn,
+                }"
+              >
+                {{ game.isMyTurn ? 'Your Turn!' : "Opponent's Turn..." }}
+              </p>
+
+              <!-- Progress Bar -->
+              <div class="flex justify-center mb-4">
+                <Progress
+                  :value="timerPercentage"
+                  class="rounded-full w-48 sm:w-96 h-4 sm:h-8 overflow-hidden"
+                  :class="progressBarColorClass"
+                />
+              </div>
+
+              <!-- Timer -->
+              <p
+                class="font-mono font-bold text-3xl sm:text-5xl transition-all duration-200"
+                :class="timerTextClass"
+              >
+                {{ game.timerSeconds }}<span class="opacity-70 text-lg sm:text-2xl">s</span>
+              </p>
+
+              <!-- Low time warning -->
+              <p
+                v-if="game.timerSeconds <= 10 && game.timerSeconds > 0"
+                class="mt-4 font-bold text-red-500 text-xl animate-pulse"
+              >
+                Hurry up!
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -176,20 +223,8 @@
         </Button>
       </div>
 
-      <!-- Your Hand -->
-      <!-- Your Hand -->
       <div class="flex flex-wrap justify-center gap-3 sm:gap-6 bg-black/40 p-4 sm:p-8 w-full">
-        <!-- Safe empty state — NO v-for here -->
-        <!-- <div v-if="game.myHand.length === 0" class="py-12 w-full text-center">
-          <div class="animate-pulse">
-            <p class="mb-2 text-gray-400 text-lg sm:text-2xl">Waiting for cards...</p>
-            <p class="text-gray-500 text-sm">
-              Game loading {{ game.status === 'playing' ? '...' : '' }}
-            </p>
-          </div>
-        </div> -->
 
-        <!-- Cards — Tooltip OUTSIDE v-for -->
         <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
           <Tooltip v-for="card in game.myHand" :key="`card-${card.filename}`">
             <TooltipTrigger as-child>
@@ -257,11 +292,11 @@
           </p>
 
           <div class="space-y-3 bg-gray-800/50 mb-8 p-6 rounded-xl">
-            <div class="flex justify-between text-lg">
+            <div class="flex justify-between text-white text-lg">
               <span>You:</span>
               <span class="font-bold text-green-300">{{ game.myFinalPoints }} pts</span>
             </div>
-            <div class="flex justify-between text-lg">
+            <div class="flex justify-between text-white text-lg">
               <span>{{ game.opponentNickname }}:</span>
               <span class="font-bold text-red-300">{{ game.opponentFinalPoints }} pts</span>
             </div>
@@ -302,9 +337,11 @@ import { AvatarFallback } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const socket = inject('socket')
 const game = useGameStore()
 const gameId = route.params.id
@@ -354,5 +391,37 @@ onMounted(async () => {
     alert('Could not join the game/match.')
     router.push('/lobby')
   }
+})
+
+const isPlayer1 = computed(() => game.players?.player1.id === authStore.currentUserID)
+const isPlayer2 = computed(() => game.players?.player2 === authStore.currentUserID)
+
+// Safe access to playedCards
+const playedCards = computed(() => game.playedCards || { player1: {}, player2: {} })
+
+// Has a winner been determined?
+const hasWinner = computed(
+  () =>
+    playedCards.value.player1?.isWinner === true || playedCards.value.player2?.isWinner === true,
+)
+
+const player1Wins = computed(() => playedCards.value.player1?.isWinner === true)
+const player2Wins = computed(() => playedCards.value.player2?.isWinner === true)
+
+// Timer helpers (cleaner)
+const timerPercentage = computed(() => (game.timerSeconds / game.turnTimeLimit) * 100)
+
+const progressBarColorClass = computed(() => {
+  const ratio = game.timerSeconds / game.turnTimeLimit
+  if (ratio > 0.5) return 'bg-green-500'
+  if (ratio > 0.2) return 'bg-yellow-500'
+  return 'bg-red-500'
+})
+
+const timerTextClass = computed(() => {
+  if (game.timerSeconds <= 10 && game.timerSeconds > 0) {
+    return 'text-red-400 animate-pulse'
+  }
+  return game.isMyTurn ? 'text-green-400' : 'text-yellow-300'
 })
 </script>

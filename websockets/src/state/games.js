@@ -30,7 +30,6 @@ const games = new Map();
 export function getOpenGames() {
   const openGames = [];
   for (const game of games.values()) {
-    // Only public multiplayer games waiting for opponent
     if (
       game.status === "waiting" &&
       !game.isSinglePlayer &&
@@ -99,7 +98,7 @@ export function startGameProperly(game) {
 
   // Reveal trump
   if (game.stock.length > 0) {
-    game.trumpCard = game.stock.pop();
+    game.trump = game.stock.pop();
   }
 
   game.status = "playing";

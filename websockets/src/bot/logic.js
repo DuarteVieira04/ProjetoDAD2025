@@ -22,6 +22,7 @@ function getWinningCards(hand, leadCard, trump) {
 }
 
 export function calculateBotMove(game, botPlayerKey) {
+  console.log(game.hands);
   const hand = game.hands[botPlayerKey];
   if (!hand || hand.length === 0) return null;
 
@@ -47,13 +48,13 @@ export function calculateBotMove(game, botPlayerKey) {
       );
     } else {
       // Can play any card.
-      if (trickCard.suit === game.trumpCard.suit) {
+      if (trickCard.suit === game.trump.suit) {
         // Opponent led Trump. We have no Trump.
         possibleWinners = [];
       } else {
         // Opponent led non-trump. We have none of that suit.
         // We can win with ANY trump.
-        possibleWinners = hand.filter((c) => c.suit === game.trumpCard.suit);
+        possibleWinners = hand.filter((c) => c.suit === game.trump.suit);
       }
     }
 

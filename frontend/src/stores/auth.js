@@ -9,7 +9,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const apiStore = useAPIStore()
 
-  const currentUser = ref(JSON.parse(localStorage.getItem('currentUser')) || undefined)
+  // const currentUser = ref(JSON.parse(localStorage.getItem('currentUser')) || undefined)
+  const currentUser = ref()
   const userCoins = ref(0)
 
   const isLoggedIn = computed(() => {
@@ -32,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     currentUser.value = user
     fetchUserCoins()
-    localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
+    // localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
 
     // Reconnect socket to update auth
     socket.disconnect()

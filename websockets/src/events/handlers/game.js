@@ -95,7 +95,7 @@ export function createGameHandler(io, socket, user, variant = "9", callback) {
     });
 
     if (game.turn === "player2") {
-      setTimeout(() => triggerBotMove(game, io), 1000);
+      setTimeout(() => triggerBotMove(io, game), 1000);
     } else {
       startTurnTimer(game, io);
     }

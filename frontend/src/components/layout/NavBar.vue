@@ -3,7 +3,7 @@
     <NavigationMenu class="hidden md:flex w-full">
       <div class="flex justify-end items-center px-4 md:px-8 w-full h-16">
         <NavigationMenuList class="flex items-center gap-6">
-          <NavigationMenuItem>
+          <!-- <NavigationMenuItem>
             <NavigationMenuTrigger>Testing</NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul class="gap-3 grid p-4 md:w-[400px] lg:w-[500px]">
@@ -19,7 +19,7 @@
                 </li>
               </ul>
             </NavigationMenuContent>
-          </NavigationMenuItem>
+          </NavigationMenuItem> -->
 
           <NavigationMenuItem v-if="isAdmin">
             <NavigationMenuLink as-child>

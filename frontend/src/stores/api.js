@@ -6,7 +6,7 @@ export const useAPIStore = defineStore('api', () => {
   const API_BASE_URL = inject('apiBaseURL')
 
   // Load token from localStorage on initialization
-  const token = ref(localStorage.getItem('authToken'))
+  const token = ref(null)
   if (token.value) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
   }
@@ -26,12 +26,14 @@ export const useAPIStore = defineStore('api', () => {
   // AUTH
   const setToken = (newToken) => {
     token.value = newToken
-    localStorage.setItem('authToken', newToken)
+    // localStorage.setItem('authToken', newToken)
     axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
   }
 
   const postLogin = async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
+    token.value = response.data.token
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
     setToken(response.data.token)
   }
   const postLogout = async () => {
@@ -83,7 +85,8 @@ export const useAPIStore = defineStore('api', () => {
 
   //Transactions
   const getAuthUserCoinsTransactions = () => axios.get(`${API_BASE_URL}/coins/transaction`)
-  const getUserCoinsTransactions = (userId) => axios.get(`${API_BASE_URL}/coins/test`, { params: { id: userId } })
+  const getUserCoinsTransactions = (userId) =>
+    axios.get(`${API_BASE_URL}/coins/test`, { params: { id: userId } })
   const getAuthUserPurchaseHistory = () => axios.get(`${API_BASE_URL}/coins/purchases`)
   const purchaseCoins = (payload) => axios.post(`${API_BASE_URL}/coins/purchase`, payload)
   const getAuthUserCoinsBalance = () => axios.get(`${API_BASE_URL}/coins/balance`)
@@ -94,8 +97,10 @@ export const useAPIStore = defineStore('api', () => {
   const getAdminStatistics = () => axios.get(`${API_BASE_URL}/statistics`)
 
   // Leaderboards
-  const getGlobalLeaderboard = (limit = 50) => axios.get(`${API_BASE_URL}/leaderboards/global`, { params: { limit } })
-  const getPersonalLeaderboard = (params = {}) => axios.get(`${API_BASE_URL}/leaderboards/personal`, { params })
+  const getGlobalLeaderboard = (limit = 50) =>
+    axios.get(`${API_BASE_URL}/leaderboards/global`, { params: { limit } })
+  const getPersonalLeaderboard = (params = {}) =>
+    axios.get(`${API_BASE_URL}/leaderboards/personal`, { params })
 
   // Match History
   const getUserMatchHistory = () => axios.get(`${API_BASE_URL}/matches/history/my`)
@@ -127,4 +132,3 @@ export const useAPIStore = defineStore('api', () => {
     getMatchDetails,
   }
 })
-

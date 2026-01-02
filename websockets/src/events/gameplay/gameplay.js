@@ -64,16 +64,15 @@ export function executeMove(io, game, playerKey, playedCard) {
   const roomId = isMatch ? game.matchId : game.id;
   const startTurnTimer = isMatch ? startMatchTurnTimer : startGameTurnTimer;
 
-  // Clear existing timer
+  // Always clear any existing timer first
   if (game.timer) {
     clearTimeout(game.timer);
     game.timer = null;
   }
 
-  // Record the play
+  // Record and broadcast the played card
   game.currentTrick.push({ player: playerKey, card: playedCard });
 
-  // Broadcast play
   io.to(roomId).emit("cardPlayed", {
     player: playerKey,
     card: {
@@ -85,11 +84,11 @@ export function executeMove(io, game, playerKey, playedCard) {
   });
 
   if (game.currentTrick.length === 1) {
-    // First card — switch turn
+    // First card of a new trick — switch turn and start timer immediately
     game.turn = playerKey === "player1" ? "player2" : "player1";
     startTurnTimer(game, io);
 
-    // Bot response in single player
+    // If bot now has to play, schedule it
     if (!isMatch && game.isSinglePlayer && game.turn === "player2") {
       setTimeout(() => triggerBotMove(io, game), 800 + Math.random() * 800);
     }
@@ -100,8 +99,8 @@ export function executeMove(io, game, playerKey, playedCard) {
     const leadSuit = c1.card.suit;
 
     if (
-      c2.card.suit === game.trumpCard?.suit &&
-      c1.card.suit !== game.trumpCard?.suit
+      c2.card.suit === game.trump?.suit &&
+      c1.card.suit !== game.trump?.suit
     ) {
       winnerKey = c2.player;
     } else if (c1.card.suit === c2.card.suit) {
@@ -119,26 +118,27 @@ export function executeMove(io, game, playerKey, playedCard) {
       player2Points: game.points.player2,
     });
 
-    // Draw cards (winner first)
+    // Draw new cards
     drawCardsAfterTrick(io, game, winnerKey, roomId);
 
-    // Check end of hand
+    // Check for game end
     if (game.hands.player1.length === 0 && game.hands.player2.length === 0) {
       setTimeout(() => endGame(game, io, { reason: "normal" }), 2000);
       return;
     }
 
-    // Winner leads next trick
+    // Winner leads next trick — set turn and start timer IMMEDIATELY
     game.turn = winnerKey;
-    game.currentTrick = []; // ← ADD THIS LINE: Clear for next trick
+    game.currentTrick = [];
+    startTurnTimer(game, io);
 
+    // Visual feedback after a short delay
     setTimeout(() => {
       io.to(roomId).emit("roundEnded", { winner: winnerKey });
 
+      // Only trigger bot lead after the round end animation
       if (!isMatch && game.isSinglePlayer && game.turn === "player2") {
         setTimeout(() => triggerBotMove(io, game), 1000 + Math.random() * 1000);
-      } else {
-        startTurnTimer(game, io);
       }
     }, 1000);
   }
@@ -199,6 +199,7 @@ function sendCardToPlayer(io, roomId, userId, card) {
 
 export function triggerBotMove(io, game) {
   console.log("[Bot] Calculating move...");
+  console.log({ game });
   const move = calculateBotMove(game, "player2");
 
   if (!move) {
