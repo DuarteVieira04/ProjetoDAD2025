@@ -121,7 +121,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     toast.error('This navigation requires authentication')
-    next({ name: 'login' })
+    next('/login')
   } else if (to.meta.adminOnly && !authStore.isAdmin()) {
     toast.error('Forbidden route')
     next({ name: '' })

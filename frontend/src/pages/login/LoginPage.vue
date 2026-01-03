@@ -1,55 +1,69 @@
 <template>
-  <div class="flex justify-center items-center px-4 sm:px-6 lg:px-8 py-12 min-h-screen">
-    <div class="space-y-8 w-full max-w-md">
-      <div>
-        <h2 class="mt-6 font-bold text-gray-900 text-3xl text-center tracking-tight">
-          Sign in to your account
-        </h2>
-        <p class="mt-2 text-gray-600 text-sm text-center">
-          Enter your credentials to access your account
-        </p>
-      </div>
-
-      <form class="space-y-6 mt-8" @submit.prevent="handleSubmit">
-        <div class="space-y-4 shadow-sm rounded-md">
-          <div>
-            <label for="email" class="block mb-1 font-medium text-gray-700 text-sm">
-              Email address
-            </label>
-            <Input
-              id="email"
-              v-model="formData.email"
-              type="email"
-              autocomplete="email"
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label for="password" class="block mb-1 font-medium text-gray-700 text-sm">
-              Password
-            </label>
-            <Input
-              id="password"
-              v-model="formData.password"
-              type="password"
-              autocomplete="current-password"
-              required
-              placeholder="••••••••"
-            />
-          </div>
-        </div>
-
+  <div class="flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12 min-h-screen">
+    <div class="w-full max-w-md">
+      <div class="bg-white sm:mx-auto mt-8 px-6 py-8 rounded-2xl sm:w-full sm:max-w-md">
         <div>
-          <Button type="submit" class="w-full"> Sign in </Button>
+          <h2 class="font-bold text-gray-900 text-3xl text-center tracking-tight">
+            Sign in to your account
+          </h2>
+          <p class="mt-2 text-gray-600 text-sm text-center">
+            Enter your credentials to access your account
+          </p>
         </div>
 
-        <div class="text-sm text-center">
-          <span class="text-gray-600">Don't have an account? </span>
-          <a href="#" class="font-medium text-blue-600 hover:text-blue-500"> Sign up </a>
-        </div>
-      </form>
+        <form class="space-y-6 mt-8" @submit.prevent="handleSubmit">
+          <div class="space-y-5">
+            <div>
+              <label for="email" class="block font-medium text-gray-700 text-sm">
+                Email address
+              </label>
+              <div class="mt-1">
+                <Input
+                  id="email"
+                  v-model="formData.email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="you@example.com"
+                  class="w-full"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="password" class="block font-medium text-gray-700 text-sm">
+                Password
+              </label>
+              <div class="mt-1">
+                <Input
+                  id="password"
+                  v-model="formData.password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  placeholder="••••••••"
+                  class="w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            class="justify-center py-2.5 w-full font-medium text-sm"
+            :disabled="!formData.email || !formData.password"
+          >
+            Sign in
+          </Button>
+
+          <p class="text-gray-600 text-sm text-center">
+            Don't have an account?
+            <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500">
+              Sign up
+            </router-link>
+          </p>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -67,8 +81,10 @@ const authStore = useAuthStore()
 const router = useRouter()
 
 const formData = ref({
-  email: 'pa@mail.pt',
-  password: '123',
+  email: '',
+  password: '',
+  // email: 'pa@mail.pt',
+  // password: '123',
 })
 
 const handleSubmit = async () => {

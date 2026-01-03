@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth'
 import GameModeCard from '@/components/home/GameModeCard.vue'
 import SingleplayerSection from '@/components/home/SingleplayerSection.vue'
 import MultiplayerSection from '@/components/home/MultiplayerSection.vue'
+import Button from '@/components/ui/button/Button.vue'
 
 const game = useGameStore()
 const authStore = useAuthStore()
