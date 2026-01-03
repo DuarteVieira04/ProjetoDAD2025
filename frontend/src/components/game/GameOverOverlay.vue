@@ -30,21 +30,23 @@
           <span>Marks:</span>
           <span>{{ game.marks?.you }} – {{ game.marks?.opponent }}</span>
         </div>
-        
+
         <!-- Match Reward -->
-        <div 
+        <div
           v-if="game.isMatch && game.gameOverData?.winner === game.youAre"
           class="flex flex-col pt-4 border-gray-200 border-t text-yellow-600"
         >
-          <span class="font-bold text-xl">You Won {{ (game.stake * 2) - 1 }} Coins!</span>
-          <span class="text-xs text-gray-500">
-            ({{ game.stake }} x 2 Stake - 1 Commission)
-          </span>
+          <span class="font-bold text-xl">You Won {{ game.stake * 2 - 1 }} Coins!</span>
+          <span class="text-xs text-gray-500"> ({{ game.stake }} x 2 Stake - 1 Commission) </span>
         </div>
 
         <!-- Single Game Reward -->
-        <div 
-          v-else-if="!game.isMatch && game.gameOverData?.winner === game.youAre && game.opponentNickname !== 'Bot'"
+        <div
+          v-else-if="
+            !game.isMatch &&
+            game.gameOverData?.winner === game.youAre &&
+            game.opponentNickname !== 'Bot'
+          "
           class="flex flex-col pt-4 border-gray-200 border-t text-yellow-600"
         >
           <span class="font-bold text-xl">You Won {{ singleGameReward }} Coins!</span>
@@ -52,14 +54,14 @@
             {{ singleGameRewardReason }}
           </span>
         </div>
-        
-         <!-- Draw Refund -->
-        <div 
-           v-else-if="!game.isMatch && !game.gameOverData?.winner && game.opponentNickname !== 'Bot'"
-           class="flex flex-col pt-4 border-gray-200 border-t text-yellow-600"
+
+        <!-- Draw Refund -->
+        <div
+          v-else-if="!game.isMatch && !game.gameOverData?.winner && game.opponentNickname !== 'Bot'"
+          class="flex flex-col pt-4 border-gray-200 border-t text-yellow-600"
         >
-           <span class="font-bold text-xl">Refunded 1 Coin</span>
-           <span class="text-xs text-gray-500">Draw Game</span>
+          <span class="font-bold text-xl">Refunded 1 Coin</span>
+          <span class="text-xs text-gray-500">Draw Game</span>
         </div>
       </div>
 
