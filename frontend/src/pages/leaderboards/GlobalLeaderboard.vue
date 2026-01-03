@@ -1,15 +1,15 @@
 <template>
-  <div class="space-y-6 mx-auto p-6 max-w-3xl">
+  <div class="space-y-6 mx-auto p-2 sm:p-6 max-w-3xl">
     <Card>
       <CardHeader>
-        <div class="flex items-center justify-between w-full">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
           <div>
             <CardTitle>Global Leaderboard</CardTitle>
             <CardDescription>Top players by selected metric</CardDescription>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm">Metric:</label>
-            <select v-model="mode" class="p-2 border rounded">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label class="text-sm shrink-0">Metric:</label>
+            <select v-model="mode" class="p-2 border rounded w-full sm:w-auto bg-background text-foreground">
               <option value="game">Game Wins</option>
               <option value="match">Match Wins</option>
             </select>
@@ -19,36 +19,36 @@
 
       <CardContent>
         <div v-if="loading" class="py-8 text-center">Loading...</div>
-        <div v-else>
-          <table class="w-full table-auto">
+        <div v-else class="overflow-x-auto">
+          <table class="w-full table-auto text-sm sm:text-base">
             <thead>
-              <tr class="text-left">
-                <th class="px-2 py-2">#</th>
-                <th class="px-2 py-2">Name</th>
-                <th class="px-2 py-2 whitespace-nowrap">{{ metricLabel }}</th>
-                <th class="px-2 py-2">Capotes</th>
-                <th class="px-2 py-2">Bandeiras</th>
+              <tr class="text-left border-b">
+                <th class="px-2 py-3 font-medium text-muted-foreground w-12 text-center">#</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground w-full">Name</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground whitespace-nowrap text-right">{{ metricLabel }}</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground text-right">Capotes</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground text-right">Bandeiras</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(u, idx) in displayedList" :key="u.user_id" class="border-t">
-                <td class="px-2 py-2">{{ idx + 1 }}</td>
-                <td class="px-2 py-2">
-                  <span
-                    :class="{
-                      'font-bold':
-                        (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
-                      italic: (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
-                    }"
-                  >
-                    {{ u.name || u.nickname || '(Anonymous User)' }}
-                  </span>
+              <tr v-for="(u, idx) in displayedList" :key="u.user_id" class="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                <td class="px-2 py-3 text-center font-medium">{{ idx + 1 }}</td>
+                <td class="px-2 py-3">
+                  <div class="flex items-center gap-2 max-w-[120px] sm:max-w-none truncate">
+                    <span
+                        :class="{
+                        'font-bold':
+                            (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
+                        italic: (u.name || u.nickname || '(Anonymous User)') === '(Anonymous User)',
+                        }"
+                    >
+                        {{ u.name || u.nickname || '(Anonymous User)' }}
+                    </span>
+                  </div>
                 </td>
-                <td class="px-2 py-2 whitespace-nowrap">
-                  {{ mode === 'game' ? u.game_wins : u.match_wins }}
-                </td>
-                <td class="px-2 py-2">{{ u.capotes }}</td>
-                <td class="px-2 py-2">{{ u.bandeiras }}</td>
+                <td class="px-2 py-3 text-right font-bold">{{ mode === 'game' ? u.game_wins : u.match_wins }}</td>
+                <td class="px-2 py-3 text-right text-muted-foreground">{{ u.capotes }}</td>
+                <td class="px-2 py-3 text-right text-muted-foreground">{{ u.bandeiras }}</td>
               </tr>
             </tbody>
           </table>

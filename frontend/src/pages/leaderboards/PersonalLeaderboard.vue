@@ -1,15 +1,15 @@
 <template>
-  <div class="space-y-6 mx-auto p-6 max-w-3xl">
+  <div class="space-y-6 mx-auto p-2 sm:p-6 max-w-3xl">
     <Card>
       <CardHeader>
-        <div class="flex items-center justify-between w-full">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
           <div>
             <CardTitle>My Leaderboard</CardTitle>
             <CardDescription>Your multiplayer stats</CardDescription>
           </div>
-          <div class="flex items-center gap-3">
-            <label class="text-sm">Variant:</label>
-            <select v-model="variant" @change="fetch" class="p-2 border rounded">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label class="text-sm shrink-0">Variant:</label>
+            <select v-model="variant" @change="fetch" class="p-2 border rounded w-full sm:w-auto bg-background text-foreground">
               <option value="both">Both</option>
               <option value="3">3</option>
               <option value="9">9</option>
@@ -20,30 +20,30 @@
 
       <CardContent>
         <div v-if="loading" class="py-8 text-center">Loading...</div>
-        <div v-else>
+        <div v-else class="overflow-x-auto">
           <div v-if="error" class="text-red-600 mb-4">{{ error }}</div>
 
-          <table class="w-full table-auto">
+          <table class="w-full table-auto text-sm sm:text-base">
             <thead>
-              <tr class="text-left">
-                <th class="px-2 py-2">Name</th>
-                <th class="px-2 py-2">Game Wins</th>
-                <th class="px-2 py-2">Match Wins</th>
-                <th class="px-2 py-2">Capotes</th>
-                <th class="px-2 py-2">Bandeiras</th>
+              <tr class="text-left border-b">
+                <th class="px-2 py-3 font-medium text-muted-foreground w-full">Name</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground whitespace-nowrap text-right">Game Wins</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground whitespace-nowrap text-right">Match Wins</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground text-right">Capotes</th>
+                <th class="px-2 py-3 font-medium text-muted-foreground text-right">Bandeiras</th>
               </tr>
             </thead>
             <tbody>
-              <tr class="border-t">
-                <td class="px-2 py-2">
+              <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                <td class="px-2 py-3">
                   <span :class="{ 'font-bold italic': displayName === '(Anonymous User)' }">{{
                     displayName
                   }}</span>
                 </td>
-                <td class="px-2 py-2 whitespace-nowrap">{{ data.game_wins }}</td>
-                <td class="px-2 py-2 whitespace-nowrap">{{ data.match_wins }}</td>
-                <td class="px-2 py-2">{{ data.capotes }}</td>
-                <td class="px-2 py-2">{{ data.bandeiras }}</td>
+                <td class="px-2 py-3 text-right font-bold">{{ data.game_wins }}</td>
+                <td class="px-2 py-3 text-right font-bold">{{ data.match_wins }}</td>
+                <td class="px-2 py-3 text-right text-muted-foreground">{{ data.capotes }}</td>
+                <td class="px-2 py-3 text-right text-muted-foreground">{{ data.bandeiras }}</td>
               </tr>
             </tbody>
           </table>
