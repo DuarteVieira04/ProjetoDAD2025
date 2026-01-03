@@ -33,7 +33,7 @@
 
       <div class="flex sm:flex-row flex-col justify-between items-center gap-4 p-4 sm:p-8 w-full">
         <PlayerInfo
-          :avatar="authStore.currentUser.value.avatar_url || '/avatars/me.jpg'"
+          :avatar="authStore.currentUser?.avatar_url || '/avatars/me.jpg'"
           :nickname="game.myNickname"
           :points="game.myPoints ?? 0"
           :is-playing="game.status === 'playing'"
