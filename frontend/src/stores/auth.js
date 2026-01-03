@@ -70,9 +70,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async () => {
     router.push({ path: '/' }) // ensurEe navigation
-    await apiStore.postLogout()
     localStorage.removeItem('currentUser')
     localStorage.removeItem('authToken')
+    await apiStore.postLogout()
     currentUser.value = undefined
     userCoins.value = 0
 
