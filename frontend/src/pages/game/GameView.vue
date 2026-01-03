@@ -33,7 +33,7 @@
 
       <div class="flex sm:flex-row flex-col justify-between items-center gap-4 p-4 sm:p-8 w-full">
         <PlayerInfo
-          :avatar="game.myAvatar || '/avatars/me.jpg'"
+          :avatar="authStore.currentUser.value.avatar_url || '/avatars/me.jpg'"
           :nickname="game.myNickname"
           :points="game.myPoints ?? 0"
           :is-playing="game.status === 'playing'"
@@ -65,11 +65,12 @@ import PlayerHand from '@/components/game/PlayerHand.vue'
 import GameOverOverlay from '@/components/game/GameOverOverlay.vue'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const game = useGameStore()
-
+const authStore = useAuthStore()
 const gameId = route.params.id
 
 onMounted(async () => {

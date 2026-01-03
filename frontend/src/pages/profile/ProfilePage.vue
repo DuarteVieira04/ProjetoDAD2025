@@ -33,7 +33,7 @@
                 class="shadow-lg ring-4 ring-background group-hover:ring-primary/20 w-32 h-32 transition-all duration-200 cursor-pointer"
                 @click="triggerFileInput"
               >
-                <AvatarImage :src="profileStore.previewUrl" alt="User avatar" />
+                <AvatarImage :src="profileStore.displayedUser?.avatar_url" alt="User avatar" />
                 <AvatarFallback class="text-3xl">{{ profileStore.initials }}</AvatarFallback>
               </Avatar>
 
@@ -353,7 +353,6 @@ const selectedType = ref(null)
 const deletePassword = ref('')
 const passwordError = ref('')
 const deleting = ref(false)
-
 const logout = () => {
   authStore.logout()
   router.push('/login')

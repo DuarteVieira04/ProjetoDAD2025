@@ -43,6 +43,7 @@ export const useProfileStore = defineStore('profile', () => {
         const coins = await authStore.fetchUserCoins()
         displayedUser.value = authStore.currentUser
         displayedUser.value.coins_balance = coins
+        console.log(displayedUser.value.avatar_url)
       }
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to load user profile.'
