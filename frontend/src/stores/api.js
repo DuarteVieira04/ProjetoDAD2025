@@ -8,6 +8,7 @@ export const useAPIStore = defineStore('api', () => {
   // Initialize token from localStorage
   const token = ref(localStorage.getItem('authToken'))
   if (token.value) {
+    // Ensure consistency by using the setter
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
   }
 
@@ -32,9 +33,7 @@ export const useAPIStore = defineStore('api', () => {
 
   const postLogin = async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials)
-    token.value = response.data.token
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-    setToken(response.data.token)
+    setToken(response.data.token) // Use the setter to handle everything
   }
   const postLogout = async () => {
     await axios.post(`${API_BASE_URL}/auth/logout`)
@@ -56,11 +55,20 @@ export const useAPIStore = defineStore('api', () => {
   const createMatch = (variant, stake) => {
     // API expects a proper payload? Let's assume params match MatchController::create
     // MatchController::create usually expects data in body.
-    return axios.post(`${API_BASE_URL}/matches`, {
-      type: variant,
-      mode: 'multi',
-      stake: parseInt(stake),
-    })
+    console.log('[API Store] creating match with token:', token.value ? 'PRESENT' : 'MISSING')
+    return axios.post(
+      `${API_BASE_URL}/matches`,
+      {
+        type: variant,
+        mode: 'multi',
+        stake: parseInt(stake),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token.value}`, // Force explicit header for this request as a fail-safe
+        },
+      },
+    )
   }
 
   //Games

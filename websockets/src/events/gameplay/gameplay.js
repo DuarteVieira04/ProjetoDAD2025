@@ -9,24 +9,29 @@ import { calculateBotMove } from '../../bot/logic.js'
 export function playCardHandler(io, user, { gameId, card }, callback) {
   // Unified lookup: works for single games AND current game in matches
   const game = getGame(gameId) || getGame(getMatch(gameId)?.currentGame)
+  console.log(`[PlayCard] Request from ${user.nickname} for gameId ${gameId}. Game found: ${!!game}`)
 
   if (!game) {
+    console.error(`[PlayCard] Game not found for ID ${gameId}`)
     return callback?.({ error: 'Game not found' })
   }
 
   if (game.status !== 'playing') {
+    console.error(`[PlayCard] Game status is ${game.status}, expected 'playing'`)
     return callback?.({ error: 'Game not in progress' })
   }
-  console.log(`[PlayCard] Current game.turn value:`, game.turn)
 
   // Identify player
   let playerKey = null
-  if (game.players.player1?.id === user.id) playerKey = 'player1'
-  else if (game.players.player2?.id === user.id) playerKey = 'player2'
+  if (String(game.players.player1?.id) === String(user.id)) playerKey = 'player1'
+  else if (String(game.players.player2?.id) === String(user.id)) playerKey = 'player2'
 
   if (!playerKey) {
+    console.error(`[PlayCard] User ${user.id} not found in players. P1: ${game.players.player1?.id}, P2: ${game.players.player2?.id}`)
     return callback?.({ error: 'You are not a player in this game' })
   }
+
+  console.log(`[PlayCard] Player identified as ${playerKey}. Turn is ${game.turn}`)
 
   // Turn validation
   if (game.turn !== playerKey) {
@@ -38,6 +43,7 @@ export function playCardHandler(io, user, { gameId, card }, callback) {
   const hand = game.hands[playerKey]
   const cardIndex = hand.findIndex((c) => c.suit === card.suit && c.rank === card.rank)
   if (cardIndex === -1) {
+    console.error(`[PlayCard] Card not found in hand. Requested: ${card.suit}-${card.rank}. Hand:`, hand.map(c => `${c.suit}-${c.rank}`))
     return callback?.({ error: 'Card not in your hand' })
   }
 
@@ -54,7 +60,7 @@ export function playCardHandler(io, user, { gameId, card }, callback) {
 
 export function executeMove(io, game, playerKey, playedCard) {
   const isMatch = !!game.matchId
-  const roomId = isMatch ? game.matchId : game.id
+  const roomId = String(isMatch ? game.matchId : game.id)
   const startTurnTimer = isMatch ? startMatchTurnTimer : startGameTurnTimer
 
   // Always clear any existing timer first
@@ -210,10 +216,10 @@ export function triggerBotMove(io, game) {
 export function awardRemainingCardsToWinner(game, winnerKey) {
   let totalPoints = 0
 
-  ;['player1', 'player2'].forEach((pk) => {
-    game.hands[pk].forEach((card) => (totalPoints += getCardValue(card.rank)))
-    game.hands[pk].length = 0
-  })
+    ;['player1', 'player2'].forEach((pk) => {
+      game.hands[pk].forEach((card) => (totalPoints += getCardValue(card.rank)))
+      game.hands[pk].length = 0
+    })
 
   game.stock.forEach((card) => (totalPoints += getCardValue(card.rank)))
   game.stock.length = 0

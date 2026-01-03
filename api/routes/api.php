@@ -61,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/coins/balance/{userId}', [CoinsController::class, 'getUserCoins']);
 
     // * Matches */
-    Route::post('/matches', [MatchController::class, 'create']);
+    Route::apiResource('matches', MatchController::class);
     Route::post('/matches/{match}/join', [MatchController::class, 'join']);
     // Route::put('/matches/{match}', [MatchController::class, 'update']);
 
@@ -75,7 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/leaderboards/personal', [StatisticsController::class, 'getPersonalLeaderboard']);
 });
 
-Route::apiResource('matches', MatchController::class);
+
 
 Route::apiResource('games', GameController::class);
 

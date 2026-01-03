@@ -15,7 +15,7 @@ use Str;
 
 class MatchController extends Controller
 {
-    public function create(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'type' => 'required|in:3,9',
@@ -129,7 +129,7 @@ class MatchController extends Controller
         return response()->json($match->fresh()->load(['player1', 'player2', 'games']));
     }
 
-    public function list()
+    public function index()
     {
         $matches = Matches::query()
             ->whereIn('status', ['Pending', 'Playing'])

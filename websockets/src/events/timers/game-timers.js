@@ -12,7 +12,7 @@ export function startTurnTimer(game, io) {
   }
 
   // Single games: room = game.id
-  const roomId = game.id
+  const roomId = String(game.id)
 
   console.log(`[GameTimer] Starting turn for ${game.turn} → room ${roomId}`)
 
@@ -39,7 +39,7 @@ export async function endGame(game, io, extra = {}) {
     game.timer = null
   }
 
-  const roomId = game.id
+  const roomId = String(game.id)
 
   const { player1, player2 } = game.points
   let winner = extra.winner || null
