@@ -154,6 +154,7 @@ import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
 import { useMatchStore } from '@/stores/match'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from 'vue-sonner'
 
 const matchStore = useMatchStore()
 const authStore = useAuthStore()
@@ -192,7 +193,7 @@ const createMatch = async () => {
   } catch (err) {
     console.error('Create match failed:', err)
     successMessage.value = ''
-    alert('Failed to create match. Please try again.')
+    toast.error('Failed to create match. Please try again.')
   } finally {
     isCreating.value = false
   }

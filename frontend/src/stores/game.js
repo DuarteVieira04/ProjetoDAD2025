@@ -1,6 +1,7 @@
 import { ref, inject, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
+import { toast } from 'vue-sonner'
 
 export const useGameStore = defineStore('game', () => {
   const socket = inject('socket')
@@ -88,7 +89,7 @@ export const useGameStore = defineStore('game', () => {
         card: { suit: card.suit, rank: card.rank },
       },
       (res) => {
-        if (res?.error) alert(res.error)
+        if (res?.error) toast.error(res.error)
       },
     )
   }
@@ -324,7 +325,7 @@ export const useGameStore = defineStore('game', () => {
   })
 
   on('invalidMove', ({ reason }) => {
-    alert('Invalid move: ' + reason)
+    toast.error('Invalid move: ' + reason)
   })
 
   on('disconnect', () => {

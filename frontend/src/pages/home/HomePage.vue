@@ -8,6 +8,7 @@ import GameModeCard from '@/components/home/GameModeCard.vue'
 import SingleplayerSection from '@/components/home/SingleplayerSection.vue'
 import MultiplayerSection from '@/components/home/MultiplayerSection.vue'
 import Button from '@/components/ui/button/Button.vue'
+import { toast } from 'vue-sonner'
 
 const game = useGameStore()
 const authStore = useAuthStore()
@@ -38,7 +39,7 @@ const createNewGame = async (variant) => {
     await game.createGame(variant)
   } catch (err) {
     console.error('Create game failed:', err)
-    alert('Failed to create game')
+    toast.error('Failed to create game')
     isCreating.value = false
   }
 }

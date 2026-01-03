@@ -8,6 +8,7 @@ import CreateGameDialog from '@/components/lobby/CreateGameDialog.vue'
 import CreateMatchDialog from '@/components/home/CreateMatchDialog.vue'
 import OpenGamesList from '@/components/lobby/OpenGamesList.vue'
 import OpenMatchesList from '@/components/lobby/OpenMatchesList.vue'
+import { toast } from 'vue-sonner'
 
 const lobbyStore = useLobbyStore()
 const router = useRouter()
@@ -23,7 +24,7 @@ const handleCreateGame = async (variant) => {
       router.push(`/game/${res.gameId}`)
     }
   } catch (e) {
-    alert('Failed to create game: ' + e)
+    toast.error('Failed to create game: ' + e)
   }
 }
 

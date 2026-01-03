@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { useLobbyStore } from '@/stores/lobby'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 
 const lobbyStore = useLobbyStore()
 const router = useRouter()
@@ -31,7 +32,7 @@ const handleCreateMatch = async (variant) => {
       router.push({ name: 'game', params: { id: res.matchId }, query: { type: 'match' } })
     }
   } catch (e) {
-    alert('Failed to create match: ' + e.message)
+    toast.error('Failed to create match: ' + e.message)
   } finally {
     isCreating.value = false
     emit('creating', false)

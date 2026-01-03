@@ -66,6 +66,7 @@ import GameOverOverlay from '@/components/game/GameOverOverlay.vue'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { useAuthStore } from '@/stores/auth'
+import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const router = useRouter()
@@ -91,7 +92,7 @@ onMounted(async () => {
     await joinAction(gameId)
   } catch (err) {
     console.error('Failed to join:', err)
-    alert('Could not join the game/match.')
+    toast.error('Could not join the game/match.')
     router.push('/lobby')
   }
 })

@@ -94,6 +94,7 @@ import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
 import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
 import { useMatchStore } from '@/stores/match'
 import { onMounted, ref } from 'vue'
+import { toast } from 'vue-sonner'
 
 const matchStore = useMatchStore()
 
@@ -113,12 +114,12 @@ const joinMatch = async (match) => {
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    alert(`Successfully joined match #${match.id}!`)
+    toast.success(`Successfully joined match #${match.id}!`)
     // Optionally refresh matches or update local state
     // await matchStore.fetchMatches()
   } catch (error) {
     console.error('Failed to join match:', error)
-    alert('Failed to join match. Please try again.')
+    toast.error('Failed to join match. Please try again.')
   } finally {
     joiningIds.value.delete(match.id)
   }
