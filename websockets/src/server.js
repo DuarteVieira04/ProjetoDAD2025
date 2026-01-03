@@ -1,6 +1,6 @@
 import { Server } from 'socket.io'
 import { handleConnectionEvents } from './events/connection.js'
-import { createApiClient } from './util/api.js'
+import { createApiClient } from './utils/api.js'
 
 export const server = {
   io: null,

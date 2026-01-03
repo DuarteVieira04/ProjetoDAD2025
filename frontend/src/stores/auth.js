@@ -23,6 +23,17 @@ export const useAuthStore = defineStore('auth', () => {
 
   const socket = inject('socket')
 
+  const register = async (payload) => {
+    await axios.post(`${API_BASE_URL}/auth/register`, payload) // or apiStore.postRegister(payload) if exists
+
+    await login({
+      email: payload.email,
+      password: payload.password,
+    })
+
+    return currentUser.value
+  }
+
   const login = async (credentials) => {
     await apiStore.postLogin(credentials)
     const response = await apiStore.getAuthUser()
@@ -81,6 +92,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentUserID,
     login,
     logout,
+    register,
     fetchUserCoins,
     deleteUser,
   }

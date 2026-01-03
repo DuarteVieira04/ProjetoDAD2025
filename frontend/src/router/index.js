@@ -16,6 +16,7 @@ import MatchHistoryPage from '@/pages/matches/MatchHistoryPage.vue'
 import StatisticsPage from '@/pages/statistics/StatisticsPage.vue'
 import GlobalLeaderboard from '@/pages/leaderboards/GlobalLeaderboard.vue'
 import PersonalLeaderboard from '@/pages/leaderboards/PersonalLeaderboard.vue'
+import RegisterPage from '@/pages/register/RegisterPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,6 +56,10 @@ const router = createRouter({
     {
       path: '/login',
       component: LoginPage,
+    },
+    {
+      path: '/register',
+      component: RegisterPage,
     },
     {
       path: '/admin',
