@@ -1,10 +1,12 @@
 import { Server } from 'socket.io'
 import { handleConnectionEvents } from './events/connection.js'
+import { createApiClient } from './util/api.js'
 
 export const server = {
   io: null,
 }
 
+console.log(process.env.API_BASE_URL)
 export const serverStart = (port) => {
   server.io = new Server(port, {
     cors: {
@@ -15,16 +17,11 @@ export const serverStart = (port) => {
   // Middleware for Authentication
   server.io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token
-
     if (token) {
       try {
-        const { default: axios } = await import('axios')
-        const response = await axios.get(`${process.env.API_BASE_URL}/api/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        })
+        const api = createApiClient({ token })
+        const response = await api.get('/api/users/me')
+
         socket.user = response.data
         console.log(`[Auth] Authenticated ${socket.user.nickname} (${socket.user.id})`)
       } catch (error) {
@@ -44,7 +41,7 @@ export const serverStart = (port) => {
       socket.user = {
         id: socket.id,
         nickname: 'Anonymous',
-        isGuest: true
+        isGuest: true,
       }
     }
 
